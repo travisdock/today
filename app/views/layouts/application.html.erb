@@ -24,6 +24,14 @@
   </head>
 
   <body>
+    <nav style="display:flex; justify-content:space-between; align-items:center;">
+      <div><%= link_to "Today", root_path %></div>
+      <div>
+        <% if authenticated? %>
+          <%= button_to "Sign out", session_path, method: :delete, form: { style: "display:inline" } %>
+        <% end %>
+      </div>
+    </nav>
     <%= yield %>
   </body>
 </html>
