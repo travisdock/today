@@ -1,0 +1,11 @@
+<% wrapper_class = section == :active ? "mt-5" : "mt-4" %>
+<%= tag.div id: "#{section}_list_container", class: wrapper_class do %>
+  <% if todos.any? %>
+    <% list_classes = section == :active ? "space-y-4" : "space-y-3" %>
+    <ul id="<%= "#{section}_todo_items" %>" class="<%= list_classes %>">
+      <%= render partial: "todos/todo", collection: todos, as: :todo, locals: { section: section } %>
+    </ul>
+  <% else %>
+    <%= render "todos/empty_state", section: section %>
+  <% end %>
+<% end %>

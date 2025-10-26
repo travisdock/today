@@ -12,7 +12,8 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     end
 
     user = User.find_by(email_address: "new@example.com")
-    assert_redirected_to user_path(user)
+    assert_not_nil user
+    assert_redirected_to todos_path
     assert cookies[:session_id]
   end
 

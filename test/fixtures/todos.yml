@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+active:
+  user: one
+  title: Plan tomorrow
+
+completed:
+  user: one
+  title: Review notes
+  completed_at: 2025-10-25 09:00:00
+
+archived:
+  user: one
+  title: Old reminder
+  archived_at: 2025-10-20 08:00:00
+
+other_user:
+  user: two
+  title: Their task
