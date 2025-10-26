@@ -1,3 +1,13 @@
-<h1>Account</h1>
-
-<p>Email: <%= @user.email_address %></p>
+<div class="w-full max-w-2xl rounded-3xl bg-white/80 px-10 py-12 text-slate-900 shadow-2xl backdrop-blur-lg">
+  <h1 class="text-center text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Account</h1>
+  <dl class="mt-10 grid gap-6">
+    <div class="rounded-2xl bg-slate-900/5 px-6 py-5 shadow-inner">
+      <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Email</dt>
+      <dd class="mt-2 text-lg font-semibold text-slate-900"><%= @user.email_address %></dd>
+    </div>
+    <div class="rounded-2xl bg-slate-900/5 px-6 py-5 shadow-inner">
+      <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Joined</dt>
+      <dd class="mt-2 text-lg font-semibold text-slate-900"><%= @user.created_at.strftime("%B %-d, %Y") %></dd>
+    </div>
+  </dl>
+</div>

@@ -18,20 +18,26 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <nav style="display:flex; justify-content:space-between; align-items:center;">
-      <div><%= link_to "Today", root_path %></div>
-      <div>
+  <body class="m-0 flex min-h-screen flex-col bg-[linear-gradient(180deg,#4d8bff_0%,#7bb3ff_35%,#ffe5c2_70%,#ffad82_100%)] bg-fixed font-sans text-slate-900">
+    <nav class="flex items-center justify-between px-6 py-4 text-slate-50 md:px-10">
+      <div class="text-lg font-semibold tracking-tight">
+        <%= link_to "Today", root_path, class: "transition hover:underline" %>
+      </div>
+      <div class="space-x-3">
         <% if authenticated? %>
-          <%= button_to "Sign out", session_path, method: :delete, form: { style: "display:inline" } %>
+          <%= button_to "Sign out", session_path,
+              method: :delete,
+              class: "inline-flex items-center rounded-full border border-white/70 bg-slate-900/25 px-4 py-2 text-sm font-semibold text-slate-50 shadow-sm transition hover:bg-slate-900/40",
+              form: { class: "inline-block" } %>
         <% end %>
       </div>
     </nav>
-    <%= yield %>
+    <main class="flex flex-1 items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <%= yield %>
+    </main>
   </body>
 </html>

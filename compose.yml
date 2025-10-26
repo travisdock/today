@@ -13,6 +13,22 @@ services:
       - BUNDLE_PATH=/usr/local/bundle
     stdin_open: true
     tty: true
+    command: ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
+  tailwind:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ["bin/rails", "tailwindcss:watch"]
+    volumes:
+      - .:/app_home
+      - bundle_cache:/usr/local/bundle
+    environment:
+      - RAILS_ENV=development
+      - BUNDLE_PATH=/usr/local/bundle
+    stdin_open: true
+    tty: true
+    depends_on:
+      - web
 
 volumes:
   bundle_cache:
