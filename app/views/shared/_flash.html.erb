@@ -1,0 +1,15 @@
+<div id="flash" class="space-y-4">
+  <% flash.each do |type, message| %>
+    <% next if message.blank? %>
+    <% message_class =
+         case type.to_sym
+         when :alert
+           "rounded-2xl border border-red-300/60 bg-red-100/80 px-4 py-3 text-sm font-medium text-red-700 shadow-lg"
+         else
+           "rounded-2xl border border-emerald-300/70 bg-emerald-100/80 px-4 py-3 text-sm font-medium text-emerald-800 shadow-lg"
+         end %>
+    <div class="<%= message_class %>">
+      <%= message %>
+    </div>
+  <% end %>
+</div>

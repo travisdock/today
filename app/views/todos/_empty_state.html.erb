@@ -1,0 +1,9 @@
+<% message =
+     if section == :active
+       "No active todos yet. Add one above to get started."
+     else
+       "Archived todos will appear here once you tuck them away."
+     end %>
+<%= tag.p message,
+    id: "#{section}_empty_state",
+    class: "rounded-2xl border border-dashed border-slate-300/80 bg-white/70 px-4 py-6 text-sm text-slate-500" %>

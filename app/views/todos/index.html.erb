@@ -1,0 +1,10 @@
+<% content_for :title, "My Todos" %>
+<% content_for :main_class, "flex flex-1 justify-center px-4 py-10 sm:px-6 lg:px-8" %>
+
+<div class="w-full max-w-3xl space-y-8">
+  <%= render "shared/flash" %>
+  <section class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur">
+    <%= render "todos/form", todo: @todo %>
+  </section>
+  <%= render "todos/lists", active_todos: @active_todos, archived_todos: @archived_todos %>
+</div>

@@ -1,0 +1,14 @@
+<div id="todo_lists" class="space-y-6">
+  <div class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur">
+    <h2 class="text-xl font-semibold text-slate-900">Active</h2>
+    <%= render "todos/list_container", section: :active, todos: active_todos %>
+  </div>
+
+  <div class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold text-slate-900">Archived</h2>
+      <%= render "todos/archived_count", count: archived_todos.count %>
+    </div>
+    <%= render "todos/list_container", section: :archived, todos: archived_todos %>
+  </div>
+</div>

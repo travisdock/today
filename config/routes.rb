@@ -1,6 +1,12 @@
 Rails.application.routes.draw do
   resource :session
   resources :users, only: %i[new create show]
+  resources :todos, only: %i[index create destroy] do
+    member do
+      patch :complete
+      patch :archive
+    end
+  end
   root "sessions#new"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
