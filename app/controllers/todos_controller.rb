@@ -91,8 +91,16 @@ class TodosController < ApplicationController
     has_other_in_source = todos_scope(source_section).where.not(id: @todo.id).exists?
     target_was_empty = !todos_scope(target_section).exists?
 
-    @todo.update!(archived_at: toggle_timestamp(@todo.archived?))
-    message = @todo.archived? ? "Archived." : "Restored to active list."
+    if source_section == :active
+      @todo.update!(archived_at: Time.current)
+      message = "Archived."
+    else
+      Todo.transaction do
+        next_position = Todo.next_position_for_user(current_user)
+        @todo.update!(archived_at: nil, position: next_position)
+      end
+      message = "Restored to active list."
+    end
 
     respond_to do |format|
       flash.now[:notice] = message
@@ -116,6 +124,43 @@ class TodosController < ApplicationController
       end
       format.html { redirect_to todos_path, notice: message, status: :see_other }
     end
+  end
+
+  def reorder
+    ids = Array(params[:order]).map(&:to_i)
+
+    return head :unprocessable_entity if ids.blank? || ids.any? { |id| id <= 0 }
+
+    reorder_failed = false
+
+    Todo.transaction do
+      lock_scope = current_user.todos.active.lock("FOR UPDATE")
+      active_ids = lock_scope.pluck(:id)
+
+      unless ids.sort == active_ids.sort
+        reorder_failed = true
+        raise ActiveRecord::Rollback
+      end
+
+      offset = ids.length
+      timestamp = Time.current
+
+      current_user.todos.where(id: ids).update_all([ "position = position + ?", offset ])
+
+      case_fragments = ids.each_with_index.map { "WHEN ? THEN ?" }.join(" ")
+      case_args = ids.each_with_index.flat_map { |id, index| [ id, index + 1 ] }
+      update_sql = ActiveRecord::Base.sanitize_sql_array([
+        "position = CASE id #{case_fragments} END, updated_at = ?",
+        *case_args,
+        timestamp
+      ])
+
+      current_user.todos.where(id: ids).update_all(update_sql)
+    end
+
+    return head :unprocessable_entity if reorder_failed
+
+    head :ok
   end
 
   private
@@ -155,9 +200,9 @@ class TodosController < ApplicationController
 
     def next_active_after(todo)
       next_todo = current_user.todos.active
-        .where("created_at > ?", todo.created_at)
+        .where("position > ?", todo.position)
         .where.not(id: todo.id)
-        .order(created_at: :asc)
+        .order(position: :asc, created_at: :asc)
         .first
       next_todo ? helpers.dom_id(next_todo) : nil
     end

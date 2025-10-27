@@ -1,7 +1,12 @@
 <% if section == :active %>
-  <li id="<%= dom_id(todo) %>" class="flex flex-col gap-4 rounded-2xl border border-slate-200/70 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-    <div class="flex items-start gap-3 sm:min-w-0">
-      <span class="flex h-6 w-6 items-center justify-center rounded-full border <%= todo.completed? ? "border-emerald-500 bg-emerald-100 text-emerald-600" : "border-slate-300 bg-white text-transparent" %>">
+  <li id="<%= dom_id(todo) %>" data-id="<%= todo.id %>" class="flex flex-col gap-4 rounded-2xl border border-slate-200/70 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-3 sm:min-w-0">
+      <span class="todo-drag-handle flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/80 text-slate-400 shadow-sm transition hover:text-slate-600" aria-label="Drag to reorder">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M6 4a1 1 0 0 1 1-1h.01a1 1 0 0 1 0 2H7a1 1 0 0 1-1-1Zm6-1a1 1 0 1 0-.01 2h.01a1 1 0 1 0 0-2ZM6 8a1 1 0 0 1 1-1h.01a1 1 0 0 1 0 2H7a1 1 0 0 1-1-1Zm6-1a1 1 0 1 0-.01 2h.01a1 1 0 1 0 0-2ZM7 11a1 1 0 0 0 0 2h.01a1 1 0 1 0 0-2H7Zm5-1a1 1 0 1 1-.01 2h.01a1 1 0 1 1 0-2ZM6 16a1 1 0 0 1 1-1h.01a1 1 0 0 1 0 2H7a1 1 0 0 1-1-1Zm6-1a1 1 0 1 0-.01 2h.01a1 1 0 1 0 0-2Z" clip-rule="evenodd" />
+        </svg>
+      </span>
+      <span class="flex h-8 w-8 items-center justify-center rounded-full border <%= todo.completed? ? "border-emerald-500 bg-emerald-100 text-emerald-600" : "border-slate-300 bg-white text-transparent" %>">
         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 0 1.414l-7.25 7.25a1 1 0 0 1-1.414 0l-3.25-3.25a1 1 0 1 1 1.414-1.414l2.543 2.543 6.543-6.543a1 1 0 0 1 1.414 0Z" clip-rule="evenodd" />
         </svg>
@@ -38,7 +43,7 @@
     </div>
   </li>
 <% else %>
-  <li id="<%= dom_id(todo) %>" class="flex flex-col gap-3 rounded-2xl border border-slate-200/60 bg-white px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+  <li id="<%= dom_id(todo) %>" data-id="<%= todo.id %>" class="flex flex-col gap-3 rounded-2xl border border-slate-200/60 bg-white px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
     <div class="sm:min-w-0">
       <p class="font-medium text-slate-800"><%= todo.title %></p>
       <p class="text-xs text-slate-400">Archived <%= time_ago_in_words(todo.archived_at) %> ago</p>

@@ -43,6 +43,22 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
     assert_nil todo.archived_at
   end
 
+  test "reorders active todos" do
+    first = todos(:active)
+    second = todos(:completed)
+
+    patch reorder_todos_url, params: { order: [ second.id, first.id ] }
+
+    assert_response :success
+    assert_equal [ second.id, first.id ], users(:one).todos.active.pluck(:id)
+  end
+
+  test "rejects reorder with invalid ids" do
+    patch reorder_todos_url, params: { order: [ todos(:active).id, todos(:other_user).id ] }
+
+    assert_response :unprocessable_entity
+  end
+
   test "creates todo for current user" do
     assert_difference -> { Todo.where(user: users(:one)).count }, 1 do
       post todos_url, params: { todo: { title: "Write tests" } }

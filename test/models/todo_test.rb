@@ -27,9 +27,29 @@ class TodoTest < ActiveSupport::TestCase
   test "active scope returns non-archived todos in creation order" do
     Todo.delete_all
     first = Todo.create!(user: users(:one), title: "First")
-    second = Todo.create!(user: users(:one), title: "Second", archived_at: nil)
+    second = Todo.create!(user: users(:one), title: "Second")
     Todo.create!(user: users(:one), title: "Archived", archived_at: Time.current)
 
     assert_equal [ first, second ], Todo.active.to_a
+  end
+
+  test "assigns position sequentially for active todos" do
+    user = users(:one)
+    existing_max = user.todos.active.maximum(:position).to_i
+
+    todo = user.todos.create!(title: "Sequence test")
+
+    assert_equal existing_max + 1, todo.position
+  end
+
+  test "active scope orders by position" do
+    Todo.delete_all
+    user = users(:one)
+    todo_a = user.todos.create!(title: "A")
+    todo_b = user.todos.create!(title: "B")
+
+    todo_a.update!(position: todo_b.position + 1)
+
+    assert_equal [ todo_b, todo_a ], user.todos.active.to_a
   end
 end
