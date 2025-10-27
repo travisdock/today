@@ -5,11 +5,6 @@ class AddPositionToTodos < ActiveRecord::Migration[8.1]
 
   def up
     add_column :todos, :position, :integer, null: false, default: 0
-    add_index :todos, [ :user_id, :position ],
-      unique: true,
-      where: "archived_at IS NULL",
-      name: "index_todos_active_position"
-
     say_with_time "Backfilling todo positions" do
       MigrationTodo.reset_column_information
 
@@ -23,6 +18,11 @@ class AddPositionToTodos < ActiveRecord::Migration[8.1]
                      .update_all("position = CASE id #{sql_parts.join(' ')} END")
       end
     end
+
+    add_index :todos, [ :user_id, :position ],
+      unique: true,
+      where: "archived_at IS NULL",
+      name: "index_todos_active_position"
   end
 
   def down

@@ -6,6 +6,15 @@ export default class extends Sortable {
     url: String
   }
 
+  get options() {
+    const options = super.options
+
+    return {
+      ...options,
+      fallbackOnBody: true
+    }
+  }
+
   async onUpdate(event) {
     await super.onUpdate(event)
 
