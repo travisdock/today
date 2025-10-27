@@ -2,6 +2,9 @@ Rails.application.routes.draw do
   resource :session
   resources :users, only: %i[new create show]
   resources :todos, only: %i[index create destroy] do
+    collection do
+      patch :reorder
+    end
     member do
       patch :complete
       patch :archive

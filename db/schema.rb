@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_10_26_213832) do
+ActiveRecord::Schema[8.1].define(version: 2025_10_27_022843) do
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -24,11 +24,13 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_26_213832) do
     t.datetime "archived_at"
     t.datetime "completed_at"
     t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
     t.string "title", limit: 255, null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["user_id", "archived_at", "created_at"], name: "index_todos_on_user_active"
     t.index ["user_id", "archived_at"], name: "index_todos_on_user_archived", where: "archived_at IS NOT NULL"
+    t.index ["user_id", "position"], name: "index_todos_active_position", unique: true, where: "archived_at IS NULL"
     t.index ["user_id"], name: "index_todos_on_user_id"
   end
 

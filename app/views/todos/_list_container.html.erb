@@ -2,9 +2,19 @@
 <%= tag.div id: "#{section}_list_container", class: wrapper_class do %>
   <% if todos.any? %>
     <% list_classes = section == :active ? "space-y-4" : "space-y-3" %>
-    <ul id="<%= "#{section}_todo_items" %>" class="<%= list_classes %>">
+    <% list_options = { id: "#{section}_todo_items", class: list_classes } %>
+    <% if section == :active %>
+      <% list_options[:data] = {
+           controller: "todo-sortable",
+           "todo-sortable-url-value": reorder_todos_path,
+           "todo-sortable-handle-value": ".todo-drag-handle",
+           "todo-sortable-animation-value": 150,
+           "todo-sortable-response-kind-value": "json"
+         } %>
+    <% end %>
+    <%= tag.ul(**list_options) do %>
       <%= render partial: "todos/todo", collection: todos, as: :todo, locals: { section: section } %>
-    </ul>
+    <% end %>
   <% else %>
     <%= render "todos/empty_state", section: section %>
   <% end %>
