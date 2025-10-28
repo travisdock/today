@@ -181,33 +181,42 @@ end
 class TodoExtractor < RubyLLM::Tool
   description "Extract todo items from transcribed speech with priorities and deadlines"
 
-  param :todos,
-        type: :array,
-        description: "List of extracted todo items from the voice recording",
-        items: {
-          type: :object,
-          properties: {
-            title: {
-              type: :string,
-              description: "The main task or action to be done (concise but clear)"
+  # Define the schema using JSON Schema format directly
+  def self.parameters
+    {
+      type: "object",
+      properties: {
+        todos: {
+          type: "array",
+          description: "List of extracted todo items from the voice recording",
+          items: {
+            type: "object",
+            properties: {
+              title: {
+                type: "string",
+                description: "The main task or action to be done (concise but clear)"
+              },
+              priority: {
+                type: "string",
+                enum: [ "low", "medium", "high" ],
+                description: "Priority level inferred from language (urgent/ASAP = high, when you can = low)"
+              },
+              deadline: {
+                type: "string",
+                description: "Due date if mentioned (parse natural language like 'tomorrow', 'next Friday')"
+              },
+              description: {
+                type: "string",
+                description: "Additional context or details about the task"
+              }
             },
-            priority: {
-              type: :string,
-              enum: %w[low medium high],
-              description: "Priority level inferred from language (urgent/ASAP = high, when you can = low)"
-            },
-            deadline: {
-              type: :string,
-              format: :date,
-              description: "Due date if mentioned (parse natural language like 'tomorrow', 'next Friday')"
-            },
-            description: {
-              type: :string,
-              description: "Additional context or details about the task"
-            }
-          },
-          required: [ :title ]
+            required: [ "title" ]
+          }
         }
+      },
+      required: [ "todos" ]
+    }
+  end
 
   def call(todos:)
     # The tool just validates and returns the structured data
