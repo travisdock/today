@@ -23,29 +23,73 @@ class VoiceTodoExtractionService
     # Convert audio to base64 for API
     audio_data = Base64.strict_encode64(@audio_blob.download)
 
-    # Configure chat with Gemini 2.5 Flash and TodoExtractor tool
-    chat = RubyLLM.chat(
-      model: "google/gemini-2.5-flash",
-      provider: "openrouter"
-    ).with_tool(TodoExtractor)
-
-    # Send audio with extraction prompt
-    response = chat.ask(
-      extraction_prompt,
-      with: {
-        type: "input_audio",
-        input_audio: {
-          data: audio_data,
-          format: audio_format
-        }
-      }
-    )
+    # Call OpenRouter API directly since ruby_llm doesn't support audio input yet
+    response = call_openrouter_api(audio_data)
 
     # Parse the structured response
     parse_response(response)
   rescue StandardError => e
     Rails.logger.error("Voice todo extraction failed: #{e.message}")
+    Rails.logger.error(e.backtrace.join("\n"))
     raise ExtractionError, "Failed to extract todos from audio: #{e.message}"
+  end
+
+  def call_openrouter_api(audio_data)
+    require "net/http"
+    require "json"
+
+    uri = URI("https://openrouter.ai/api/v1/chat/completions")
+    request = Net::HTTP::Post.new(uri)
+    request["Authorization"] = "Bearer #{Rails.application.credentials.dig(:openrouter, :api_key)}"
+    request["Content-Type"] = "application/json"
+    request["HTTP-Referer"] = "https://github.com/travisdock/today" # Optional, for rankings
+    request["X-Title"] = "Today - Voice Todos" # Optional, shows in rankings
+
+    request.body = {
+      model: "google/gemini-2.0-flash-exp:free",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: extraction_prompt
+            },
+            {
+              type: "input_audio",
+              input_audio: {
+                data: audio_data,
+                format: audio_format
+              }
+            }
+          ]
+        }
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "extract_todos",
+            description: "Extract todo items from transcribed speech",
+            parameters: TodoExtractor.parameters
+          }
+        }
+      ],
+      tool_choice: {
+        type: "function",
+        function: { name: "extract_todos" }
+      }
+    }.to_json
+
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+      http.request(request)
+    end
+
+    unless response.is_a?(Net::HTTPSuccess)
+      raise ExtractionError, "API request failed: #{response.code} #{response.body}"
+    end
+
+    JSON.parse(response.body)
   end
 
   private
@@ -115,25 +159,27 @@ class VoiceTodoExtractionService
   end
 
   def parse_response(response)
-    # The tool response should contain structured todo data
-    content = response.content
+    # Extract tool call from OpenRouter API response
+    choices = response["choices"]
+    return [] if choices.blank?
 
-    if content.is_a?(String)
-      parsed = JSON.parse(content)
-    elsif content.respond_to?(:to_h)
-      parsed = content.to_h
-    else
-      parsed = content
-    end
+    message = choices.first["message"]
+    tool_calls = message["tool_calls"]
+    return [] if tool_calls.blank?
 
-    # Extract todos array from response
-    todos = parsed["todos"] || parsed[:todos] || []
+    # Get the function arguments (which contain our todos)
+    function_args = JSON.parse(tool_calls.first["function"]["arguments"])
+    todos = function_args["todos"] || []
 
     # Ensure todos is an array
     todos = [ todos ] unless todos.is_a?(Array)
 
     # Transform and validate each todo
     todos.map { |todo| transform_todo(todo) }.compact
+  rescue StandardError => e
+    Rails.logger.error("Failed to parse response: #{e.message}")
+    Rails.logger.error("Response: #{response.inspect}")
+    []
   end
 
   def transform_todo(todo_data)
