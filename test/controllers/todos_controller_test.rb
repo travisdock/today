@@ -136,4 +136,40 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, %(<turbo-stream action="replace" target="flash">)
     assert_includes response.body, %(<turbo-stream action="replace" target="#{dom_id}">)
   end
+
+  test "creates todos from voice input" do
+    stubbed_result = VoiceTodoExtractionService::Result.new(
+      todos: [
+        { title: "Call the dentist" },
+        { title: "Order groceries" }
+      ]
+    )
+
+    VoiceTodoExtractionService.stub(:extract, stubbed_result) do
+      assert_difference -> { Todo.where(user: users(:one)).count }, 2 do
+        post create_from_voice_todos_url,
+          params: { audio: fixture_file_upload("sample.webm", "audio/webm") },
+          as: :turbo_stream
+      end
+    end
+
+    assert_response :success
+    assert_includes response.body, "Call the dentist"
+    assert_includes response.body, "Order groceries"
+  end
+
+  test "handles voice input errors" do
+    stubbed_result = VoiceTodoExtractionService::Result.new(error: "No todos found.")
+
+    VoiceTodoExtractionService.stub(:extract, stubbed_result) do
+      assert_no_difference -> { Todo.where(user: users(:one)).count } do
+        post create_from_voice_todos_url,
+          params: { audio: fixture_file_upload("sample.webm", "audio/webm") },
+          as: :turbo_stream
+      end
+    end
+
+    assert_response :unprocessable_entity
+    assert_includes response.body, "No todos found."
+  end
 end

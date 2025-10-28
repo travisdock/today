@@ -46,6 +46,69 @@ class TodosController < ApplicationController
     end
   end
 
+  def create_from_voice
+    Rails.logger.error "Voice todo creation params: #{params.inspect}"
+    was_empty = !todos_scope(:active).exists?
+    extraction = VoiceTodoExtractionService.extract(params[:audio])
+
+    unless extraction.success?
+      return render_voice_failure(extraction.error || "Voice processing failed. Please try again.")
+    end
+
+    created_todos = []
+    errors = []
+
+    extraction.todos.each do |todo_data|
+      title = todo_data[:title] || todo_data["title"]
+      next if title.blank?
+
+      todo = current_user.todos.build(title: title.to_s.strip)
+      if todo.save
+        created_todos << todo
+      else
+        errors.concat(todo.errors.full_messages)
+      end
+    end
+
+    if created_todos.empty?
+      message = errors.present? ? errors.uniq.to_sentence : "We couldn't add any todos from that recording."
+      return render_voice_failure(message)
+    end
+
+    notice_message = helpers.pluralize(created_todos.count, "todo")
+    notice_message = "Added #{notice_message} from voice input."
+
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:notice] = notice_message
+        fresh_form = current_user.todos.build
+        streams = [
+          turbo_stream.replace("flash", partial: "shared/flash"),
+          turbo_stream.replace("todo_form", partial: "todos/form", locals: { todo: fresh_form })
+        ]
+
+        if was_empty
+          streams << turbo_stream.replace("active_list_container",
+                                          partial: "todos/list_container",
+                                          locals: { section: :active, todos: created_todos })
+        else
+          created_todos.each do |todo|
+            streams << turbo_stream.append("active_todo_items",
+                                           partial: "todos/todo",
+                                           locals: { todo:, section: :active })
+          end
+        end
+
+        render turbo_stream: streams
+      end
+
+      format.html do
+        flash[:notice] = notice_message
+        redirect_to todos_path, status: :see_other
+      end
+    end
+  end
+
   def destroy
     section = @todo.archived? ? :archived : :active
     remaining_elsewhere = todos_scope(section).where.not(id: @todo.id).exists?
@@ -182,6 +245,23 @@ class TodosController < ApplicationController
 
     def toggle_timestamp(current_state)
       current_state ? nil : Time.current
+    end
+
+    def render_voice_failure(message)
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = message
+          render turbo_stream: [
+            turbo_stream.replace("flash", partial: "shared/flash"),
+            turbo_stream.replace("todo_form", partial: "todos/form", locals: { todo: current_user.todos.build })
+          ], status: :unprocessable_entity
+        end
+
+        format.html do
+          flash[:alert] = message
+          redirect_to todos_path, status: :see_other
+        end
+      end
     end
 
     def target_stream_for(section, todo)
