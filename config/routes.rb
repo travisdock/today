@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   resources :todos, only: %i[index create destroy] do
     collection do
       patch :reorder
+      post :create_from_voice
     end
     member do
       patch :complete

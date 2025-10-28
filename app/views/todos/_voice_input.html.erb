@@ -1,0 +1,165 @@
+<%# Voice Input Component %>
+<div
+  data-controller="voice-input"
+  data-voice-input-url-value="<%= create_from_voice_todos_path %>"
+  data-voice-input-max-duration-value="120"
+  class="mt-6"
+>
+  <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600">
+    Or record by voice
+  </label>
+
+  <div class="mt-2 flex flex-col gap-3">
+    <%# Voice Recording Button %>
+    <button
+      type="button"
+      data-voice-input-target="button"
+      data-action="click->voice-input#toggleRecording"
+      data-state="idle"
+      aria-label="Start voice recording"
+      class="voice-record-button group relative inline-flex items-center justify-center gap-3 rounded-2xl border border-slate-300/80 bg-gradient-to-br from-white via-white to-slate-50 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-slate-700 shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-400/40 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <%# Microphone Icon - shown when idle %>
+      <svg
+        data-state-show="idle"
+        class="h-5 w-5 text-blue-600 transition-all group-hover:scale-110"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+        />
+      </svg>
+
+      <%# Recording Indicator - animated pulse %>
+      <span
+        data-state-show="recording"
+        class="hidden h-3 w-3 animate-pulse rounded-full bg-red-600"
+      ></span>
+
+      <%# Processing Spinner %>
+      <svg
+        data-state-show="processing"
+        class="hidden h-5 w-5 animate-spin text-blue-600"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+
+      <%# Button Text %>
+      <span data-state-text="idle">Record Todos</span>
+      <span data-state-text="recording" class="hidden">Stop Recording</span>
+      <span data-state-text="processing" class="hidden">Processing...</span>
+      <span data-state-text="success" class="hidden">Success!</span>
+      <span data-state-text="error" class="hidden">Error</span>
+    </button>
+
+    <%# Timer Display - shown during recording %>
+    <div
+      data-voice-input-target="timer"
+      data-state-show="recording"
+      class="hidden text-center text-sm font-mono text-slate-600"
+      aria-live="polite"
+    >
+      00:00 / 02:00
+    </div>
+
+    <%# Status Messages %>
+    <div
+      data-voice-input-target="status"
+      role="status"
+      aria-live="polite"
+      class="text-sm"
+    ></div>
+  </div>
+
+  <%# Help Text %>
+  <p class="mt-3 text-xs text-slate-500">
+    Press the button and speak your todos. Say things like "Buy groceries, call dentist, finish project by Friday."
+    Maximum 2 minutes.
+  </p>
+
+  <%# Privacy Notice - First Use (optional, could be a modal) %>
+  <details class="mt-3">
+    <summary class="cursor-pointer text-xs text-slate-500 hover:text-slate-700">
+      Privacy & how it works
+    </summary>
+    <div class="mt-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+      <p class="font-semibold">Your voice recordings are:</p>
+      <ul class="mt-1 list-inside list-disc space-y-1">
+        <li>Temporarily recorded on your device</li>
+        <li>Sent to our AI service for transcription</li>
+        <li>Converted to text and deleted immediately</li>
+        <li>Never stored permanently</li>
+      </ul>
+      <p class="mt-2">
+        <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>
+      </p>
+    </div>
+  </details>
+</div>
+
+<style>
+  /* State-based visibility */
+  [data-controller="voice-input"] button[data-state="idle"] [data-state-show="idle"],
+  [data-controller="voice-input"] button[data-state="idle"] [data-state-text="idle"] {
+    display: inline-block;
+  }
+
+  [data-controller="voice-input"] button[data-state="recording"] [data-state-show="recording"],
+  [data-controller="voice-input"] button[data-state="recording"] [data-state-text="recording"] {
+    display: inline-block;
+  }
+
+  [data-controller="voice-input"] button[data-state="processing"] [data-state-show="processing"],
+  [data-controller="voice-input"] button[data-state="processing"] [data-state-text="processing"] {
+    display: inline-block;
+  }
+
+  [data-controller="voice-input"] button[data-state="success"] [data-state-text="success"] {
+    display: inline-block;
+  }
+
+  [data-controller="voice-input"] button[data-state="error"] [data-state-text="error"] {
+    display: inline-block;
+  }
+
+  /* Timer visibility */
+  [data-controller="voice-input"] [data-voice-input-target="timer"][data-state-show="recording"] {
+    display: block;
+  }
+
+  /* Recording state button styling */
+  [data-controller="voice-input"] button[data-state="recording"] {
+    background: linear-gradient(to bottom right, #fef2f2, #fee2e2);
+    border-color: #fca5a5;
+    color: #991b1b;
+  }
+
+  /* Processing state button styling */
+  [data-controller="voice-input"] button[data-state="processing"] {
+    background: linear-gradient(to bottom right, #eff6ff, #dbeafe);
+    border-color: #93c5fd;
+    color: #1e40af;
+  }
+
+  /* Success state button styling */
+  [data-controller="voice-input"] button[data-state="success"] {
+    background: linear-gradient(to bottom right, #f0fdf4, #dcfce7);
+    border-color: #86efac;
+    color: #166534;
+  }
+
+  /* Error state button styling */
+  [data-controller="voice-input"] button[data-state="error"] {
+    background: linear-gradient(to bottom right, #fef2f2, #fee2e2);
+    border-color: #fca5a5;
+    color: #991b1b;
+  }
+</style>

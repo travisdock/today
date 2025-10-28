@@ -1,6 +1,9 @@
 class TodosController < ApplicationController
   before_action :set_todo, only: %i[destroy complete archive]
 
+  # Rate limit voice recordings to prevent abuse (10 per minute per user)
+  rate_limit to: 10, within: 1.minute, only: :create_from_voice, with: -> { render json: { error: "Rate limit exceeded. Please wait before recording again." }, status: :too_many_requests }
+
   def index
     @todo = current_user.todos.build
     @active_todos = current_user.todos.active
@@ -44,6 +47,43 @@ class TodosController < ApplicationController
         end
       end
     end
+  end
+
+  def create_from_voice
+    # Validate audio file presence
+    unless params[:audio].present?
+      return render json: { error: "No audio file provided" }, status: :unprocessable_entity
+    end
+
+    # Validate audio file
+    audio_file = params[:audio]
+    unless audio_file.respond_to?(:read)
+      return render json: { error: "Invalid audio file" }, status: :unprocessable_entity
+    end
+
+    # Check file size (max 25MB)
+    if audio_file.size > 25.megabytes
+      return render json: { error: "Audio file too large (max 25MB)" }, status: :unprocessable_entity
+    end
+
+    # Temporarily attach audio to ActiveStorage
+    blob = ActiveStorage::Blob.create_and_upload!(
+      io: audio_file,
+      filename: "voice_recording_#{Time.current.to_i}.webm",
+      content_type: audio_file.content_type || "audio/webm"
+    )
+
+    # Queue background job for processing
+    ProcessVoiceRecordingJob.perform_later(blob.id, current_user.id)
+
+    # Return 202 Accepted with job status
+    render json: {
+      message: "Audio processing started",
+      status: "processing"
+    }, status: :accepted
+  rescue StandardError => e
+    Rails.logger.error("Voice recording upload failed: #{e.message}")
+    render json: { error: "Failed to process audio file" }, status: :internal_server_error
   end
 
   def destroy
