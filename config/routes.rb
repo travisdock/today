@@ -10,6 +10,7 @@ Rails.application.routes.draw do
       patch :archive
     end
   end
+  resources :agents, only: :create
   root "sessions#new"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

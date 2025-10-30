@@ -23,4 +23,49 @@
       <% end %>
     </div>
   <% end %>
+
+  <% if Current.user&.voice_agent_enabled? %>
+    <%= form_with url: agents_path,
+                  method: :post,
+                  scope: nil,
+                  multipart: true,
+                  html: {
+                    class: "mt-8 flex flex-col items-center gap-2",
+                    data: { controller: "audio-recorder" }
+                  } do %>
+      <input
+        type="file"
+        name="audio"
+        accept="audio/webm,audio/mp4,audio/mpeg"
+        data-audio-recorder-target="input"
+        class="hidden"
+      >
+      <button
+        type="button"
+        data-action="audio-recorder#toggle"
+        data-audio-recorder-target="button"
+        class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-900/80 text-slate-50 shadow-lg transition focus:outline-none focus:ring-4 focus:ring-blue-400/40"
+        aria-pressed="false"
+      >
+        <span class="sr-only">Toggle voice recording</span>
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 5.5a4 4 0 0 1 8 0v5a4 4 0 1 1-8 0z" />
+          <path d="M12 16.5v4" />
+          <path d="M15.5 20.5h-7" />
+        </svg>
+      </button>
+      <p
+        class="text-xs font-semibold uppercase tracking-wide text-slate-600"
+        data-audio-recorder-target="status"
+        id="audio_recorder_status"
+      >
+        Tap to record
+      </p>
+      <div
+        id="agent_transcriptions"
+        class="mt-4 flex w-full max-w-md flex-col gap-3"
+        aria-live="polite"
+      ></div>
+    <% end %>
+  <% end %>
 </div>
