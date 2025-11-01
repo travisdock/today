@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_10_27_022843) do
+ActiveRecord::Schema[8.1].define(version: 2025_10_30_150000) do
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -39,6 +39,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_27_022843) do
     t.string "email_address", null: false
     t.string "password_digest", null: false
     t.datetime "updated_at", null: false
+    t.boolean "voice_agent_enabled", default: false, null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
