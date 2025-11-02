@@ -1,14 +1,14 @@
-<div id="flash" class="space-y-4">
+<div id="flash" class="fixed left-1/2 top-6 z-50 w-full max-w-md -translate-x-1/2 space-y-4 px-4 transition-opacity duration-500" data-controller="flash">
   <% flash.each do |type, message| %>
     <% next if message.blank? %>
     <% message_class =
          case type.to_sym
          when :alert
-           "rounded-2xl border border-red-300/60 bg-red-100/80 px-4 py-3 text-sm font-medium text-red-700 shadow-lg"
+           "rounded-2xl border border-red-300/30 bg-red-100/45 px-4 py-3 text-sm font-medium text-red-700 shadow-lg backdrop-blur-sm"
          else
-           "rounded-2xl border border-emerald-300/70 bg-emerald-100/80 px-4 py-3 text-sm font-medium text-emerald-800 shadow-lg"
+           "rounded-2xl border border-emerald-300/30 bg-emerald-100/45 px-4 py-3 text-sm font-medium text-emerald-800 shadow-lg backdrop-blur-sm"
          end %>
-    <div class="<%= message_class %>">
+    <div class="<%= message_class %>" data-flash-target="message">
       <%= message %>
     </div>
   <% end %>
