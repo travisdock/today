@@ -36,7 +36,7 @@
         </button>
 
         <div data-dropdown-target="menu"
-             class="hidden absolute right-0 mt-2 w-40 rounded-lg border bg-white shadow-lg z-[9999]">
+             class="hidden absolute right-0 mt-2 w-40 rounded-lg border bg-white shadow-lg z-10">
           <% Todo.priority_windows.keys.reject { |w| w == section.to_s }.each do |window| %>
             <%= button_to window.titleize,
                           move_todo_path(todo, priority_window: window),

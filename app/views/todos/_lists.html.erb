@@ -1,10 +1,11 @@
 <div id="todo_lists" class="space-y-6">
   <%# Iterate through priority windows in order %>
-  <% [:today, :tomorrow, :this_week, :next_week].each do |window| %>
+  <% [:today, :tomorrow, :this_week, :next_week].each_with_index do |window, index| %>
     <% todos = active_todos_grouped[window.to_s] || [] %>
+    <% z_index = 4 - index %> <%# Decreasing z-index: today=4, tomorrow=3, this_week=2, next_week=1 %>
 
     <%# Always show all windows (even if empty) %>
-    <div id="<%= window %>_list_container" class="priority-window-section">
+    <div id="<%= window %>_list_container" class="priority-window-section relative" style="z-index: <%= z_index %>;">
       <div class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur">
         <%# Window Header %>
         <div class="mb-4 flex items-center justify-between">
