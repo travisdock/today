@@ -44,18 +44,23 @@ class AgentsController < ApplicationController
     end
 
     OpenRouter::Agent.new.run(instructions: transcription, user: user)
-    active_todos = user.todos.active
 
     respond_to do |format|
       format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.update("audio_recorder_status", ERB::Util.html_escape("Tap to record again.")),
-          turbo_stream.replace(
-            "active_list_container",
-            partial: "todos/list_container",
-            locals: { section: :active, todos: active_todos }
-          )
+        streams = [
+          turbo_stream.update("audio_recorder_status", ERB::Util.html_escape("Tap to record again."))
         ]
+
+        # Replace all priority window containers
+        [ :today, :tomorrow, :this_week, :next_week ].each do |window|
+          window_todos = user.todos.active.where(priority_window: window).order(:position)
+          streams << turbo_stream.replace("#{window}_list_container",
+            html: helpers.content_tag(:div, id: "#{window}_list_container", class: "priority-window-section relative", style: "z-index: #{window_z_index(window)};") do
+              render_to_string partial: "todos/priority_window", locals: { window: window, todos: window_todos }
+            end)
+        end
+
+        render turbo_stream: streams
       end
     end
   rescue StandardError => error
@@ -103,5 +108,11 @@ class AgentsController < ApplicationController
         current = 1
       end
       current > RATE_LIMIT_MAX_REQUESTS
+    end
+
+    def window_z_index(window)
+      windows = [ :today, :tomorrow, :this_week, :next_week ]
+      index = windows.index(window)
+      4 - index
     end
 end
