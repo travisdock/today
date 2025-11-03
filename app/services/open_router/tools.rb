@@ -77,6 +77,29 @@ module OpenRouter
       }
     }
 
-    TOOL_LIST = [ CREATE_TODO, BULK_CREATE_TODOS, REORDER_TODOS ].freeze
+    MOVE_TODO = {
+      "type" => "function",
+      "function" => {
+        "name" => "move_todo",
+        "description" => "Move a todo to a different priority window.",
+        "parameters" => {
+          "type" => "object",
+          "properties" => {
+            "todo_id" => {
+              "type" => "integer",
+              "description" => "The ID of the todo to move"
+            },
+            "priority_window" => {
+              "type" => "string",
+              "enum" => [ "today", "tomorrow", "this_week", "next_week" ],
+              "description" => "The target priority window to move the todo to"
+            }
+          },
+          "required" => [ "todo_id", "priority_window" ]
+        }
+      }
+    }
+
+    TOOL_LIST = [ CREATE_TODO, BULK_CREATE_TODOS, REORDER_TODOS, MOVE_TODO ].freeze
   end
 end

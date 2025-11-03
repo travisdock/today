@@ -46,6 +46,20 @@ module OpenRouter
       create_todos!(todos)
     end
 
+    # Move a todo to a different priority window.
+    def move_todo!(todo_id:, priority_window:)
+      todo = @relation.find(todo_id)
+      raise ArgumentError, "Todo is already in #{priority_window}" if todo.priority_window == priority_window
+
+      @relation.transaction do
+        # Get next position in new window
+        next_position = @relation.where(priority_window: priority_window).maximum(:position).to_i + 1
+        todo.update!(priority_window: priority_window, position: next_position)
+      end
+
+      todo
+    end
+
     private
       def create_todos!(todos)
         items = Array(todos).map do |item|

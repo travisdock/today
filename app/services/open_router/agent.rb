@@ -14,7 +14,7 @@ module OpenRouter
         {
           role: "system",
           content: [
-            { type: "text", text: "You manage a todo list organized into priority windows: 'today', 'tomorrow', 'this_week', and 'next_week'. Available tools: create_todo, bulk_create_todos, reorder_todos. When creating todos, assign them to the appropriate priority window based on the user's intent. Issue at most one tool call per response and wait for the application's reply before calling another tool. Prefer tool calls for any changes." }
+            { type: "text", text: "You manage a todo list organized into priority windows: 'today', 'tomorrow', 'this_week', and 'next_week'. Available tools: create_todo, bulk_create_todos, reorder_todos, move_todo. When creating todos, assign them to the appropriate priority window based on the user's intent. Use move_todo to move existing todos between priority windows. Issue at most one tool call per response and wait for the application's reply before calling another tool. Prefer tool calls for any changes." }
           ]
         },
         {
@@ -82,6 +82,21 @@ module OpenRouter
               priority_window: args["priority_window"]
             )
             tool_result = { status: "ok" }
+          when "move_todo"
+            args = safe_json(tool_call[:arguments]) || {}
+            moved = service.move_todo!(
+              todo_id: args["todo_id"],
+              priority_window: args["priority_window"]
+            )
+            tool_result = {
+              status: "ok",
+              todo: {
+                id: moved.id,
+                title: moved.title,
+                position: moved.position,
+                priority_window: moved.priority_window
+              }
+            }
           else
             tool_result = { status: "ignored_unknown_tool" }
           end
