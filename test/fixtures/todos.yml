@@ -1,23 +1,57 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-active:
+today_one:
   user: one
-  title: Plan tomorrow
+  title: Review pull requests
+  priority_window: today
+  position: 0
+
+today_two:
+  user: one
+  title: Write project update
+  priority_window: today
   position: 1
+
+tomorrow_one:
+  user: one
+  title: Team meeting prep
+  priority_window: tomorrow
+  position: 0
+
+tomorrow_two:
+  user: one
+  title: Update documentation
+  priority_window: tomorrow
+  position: 1
+
+this_week_one:
+  user: one
+  title: Refactor user service
+  priority_window: this_week
+  position: 0
+
+next_week_one:
+  user: one
+  title: Plan Q2 roadmap
+  priority_window: next_week
+  position: 0
 
 completed:
   user: one
   title: Review notes
+  priority_window: today
   completed_at: 2025-10-25 09:00:00
   position: 2
 
 archived:
   user: one
   title: Old reminder
+  priority_window: today
   archived_at: 2025-10-20 08:00:00
   position: 1
 
 other_user:
   user: two
   title: Their task
-  position: 1
+  priority_window: today
+  position: 0

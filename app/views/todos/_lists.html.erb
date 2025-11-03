@@ -1,9 +1,42 @@
 <div id="todo_lists" class="space-y-6">
-  <div class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur">
-    <h2 class="text-xl font-semibold text-slate-900">Active</h2>
-    <%= render "todos/list_container", section: :active, todos: active_todos %>
-  </div>
+  <%# Iterate through priority windows in order %>
+  <% [:today, :tomorrow, :this_week, :next_week].each do |window| %>
+    <% todos = active_todos_grouped[window.to_s] || [] %>
 
+    <%# Always show all windows (even if empty) %>
+    <div id="<%= window %>_list_container" class="priority-window-section">
+      <div class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur">
+        <%# Window Header %>
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-slate-900">
+            <%= window.to_s.titleize %>
+            <span class="ml-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600">
+              <%= todos.count %>
+            </span>
+          </h2>
+        </div>
+
+        <%# Sortable Todo List %>
+        <div id="<%= window %>_todo_items"
+             class="space-y-2"
+             <% if todos.any? %>
+               data-controller="todo-sortable"
+               data-todo-sortable-url-value="<%= reorder_todos_path %>"
+               data-todo-sortable-handle-value=".todo-drag-handle"
+             <% end %>>
+          <% if todos.any? %>
+            <%= render partial: "todos/todo", collection: todos, locals: { section: window } %>
+          <% else %>
+            <div class="py-8 text-center text-slate-400">
+              <p>No todos in this window</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Archived Section %>
   <div class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold text-slate-900">Archived</h2>

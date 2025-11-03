@@ -8,6 +8,7 @@ Rails.application.routes.draw do
     member do
       patch :complete
       patch :archive
+      patch :move
     end
   end
   resources :agents, only: :create

@@ -35,9 +35,10 @@ class TodoTest < ActiveSupport::TestCase
 
   test "assigns position sequentially for active todos" do
     user = users(:one)
-    existing_max = user.todos.active.maximum(:position).to_i
+    priority_window = "today"
+    existing_max = user.todos.where(priority_window: priority_window, archived_at: nil).maximum(:position).to_i
 
-    todo = user.todos.create!(title: "Sequence test")
+    todo = user.todos.create!(title: "Sequence test", priority_window: priority_window)
 
     assert_equal existing_max + 1, todo.position
   end
