@@ -143,7 +143,10 @@ module OpenRouter
     end
 
     def safe_json(str)
-      JSON.parse(str.to_s) rescue nil
+      JSON.parse(str.to_s)
+    rescue JSON::ParserError => e
+      Rails.logger.warn("Failed to parse JSON in OpenRouter::Agent: #{e.message}")
+      nil
     end
   end
 end
