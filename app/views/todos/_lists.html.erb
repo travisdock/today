@@ -1,9 +1,15 @@
 <div id="todo_lists" class="space-y-6">
-  <div class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur">
-    <h2 class="text-xl font-semibold text-slate-900">Active</h2>
-    <%= render "todos/list_container", section: :active, todos: active_todos %>
-  </div>
+  <%# Iterate through priority windows in order %>
+  <% Todo::PRIORITY_WINDOWS.each do |window| %>
+    <% todos = active_todos_grouped[window.to_s] || [] %>
 
+    <%# Always show all windows (even if empty) %>
+    <div id="<%= window %>_list_container" class="priority-window-section relative" style="z-index: <%= window_z_index(window) %>;">
+      <%= render "todos/priority_window", window: window, todos: todos %>
+    </div>
+  <% end %>
+
+  <%# Archived Section %>
   <div class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold text-slate-900">Archived</h2>

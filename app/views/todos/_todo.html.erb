@@ -1,5 +1,5 @@
-<% if section == :active %>
-  <li id="<%= dom_id(todo) %>" data-id="<%= todo.id %>" class="flex flex-col gap-4 rounded-2xl border border-slate-200/70 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+<% if section != :archived %>
+  <li id="<%= dom_id(todo) %>" data-id="<%= todo.id %>" data-todo-id="<%= todo.id %>" class="flex flex-col gap-4 rounded-2xl border border-slate-200/70 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-3 sm:min-w-0">
       <span class="todo-drag-handle flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/80 text-slate-400 shadow-sm transition hover:text-slate-600" aria-label="Drag to reorder">
         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -26,8 +26,29 @@
             class: "rounded-full border border-blue-500/50 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-blue-700 transition hover:bg-blue-100",
             form: { class: "inline-block" }
           ) %>
+
+      <%# Move to... dropdown %>
+      <div class="relative inline-block" data-controller="dropdown">
+        <button type="button"
+                data-action="click->dropdown#toggle"
+                class="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 hover:bg-slate-50 transition">
+          Move to...
+        </button>
+
+        <div data-dropdown-target="menu"
+             class="hidden absolute right-0 mt-2 w-40 rounded-lg border bg-white shadow-lg z-10">
+          <% Todo.priority_windows.keys.reject { |w| w == section.to_s }.each do |window| %>
+            <%= button_to window.titleize,
+                          move_todo_path(todo, priority_window: window),
+                          method: :patch,
+                          class: "block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition",
+                          form: { class: "w-full" } %>
+          <% end %>
+        </div>
+      </div>
+
       <%= button_to(
-            todo.archived? ? "Restore" : "Archive",
+            "Archive",
             archive_todo_path(todo),
             method: :patch,
             class: "rounded-full border border-amber-500/40 bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-700 transition hover:bg-amber-100",

@@ -15,7 +15,7 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
   test "shows index" do
     get todos_url
     assert_response :success
-    assert_match "Plan tomorrow", response.body
+    assert_match "Review pull requests", response.body
   end
 
   test "index does not include other users todos" do
@@ -44,17 +44,18 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "reorders active todos" do
-    first = todos(:active)
-    second = todos(:completed)
+    first = todos(:today_one)
+    second = todos(:today_two)
+    third = todos(:completed)
 
-    patch reorder_todos_url, params: { order: [ second.id, first.id ] }
+    patch reorder_todos_url, params: { order: [ second.id, third.id, first.id ] }
 
     assert_response :success
-    assert_equal [ second.id, first.id ], users(:one).todos.active.pluck(:id)
+    assert_equal [ second.id, third.id, first.id ], users(:one).todos.where(priority_window: "today", archived_at: nil).order(:position).pluck(:id)
   end
 
   test "rejects reorder with invalid ids" do
-    patch reorder_todos_url, params: { order: [ todos(:active).id, todos(:other_user).id ] }
+    patch reorder_todos_url, params: { order: [ todos(:today_one).id, todos(:other_user).id ] }
 
     assert_response :unprocessable_entity
   end
@@ -77,7 +78,7 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "toggles completion" do
-    todo = todos(:active)
+    todo = todos(:today_one)
 
     patch complete_todo_url(todo)
     assert_redirected_to todos_url
@@ -89,7 +90,7 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "toggles archive state" do
-    todo = todos(:active)
+    todo = todos(:today_one)
 
     patch archive_todo_url(todo)
     assert_redirected_to todos_url
@@ -101,7 +102,7 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "destroys todo" do
-    todo = todos(:active)
+    todo = todos(:today_one)
 
     assert_difference -> { Todo.where(user: users(:one)).count }, -1 do
       delete todo_url(todo)
@@ -126,7 +127,7 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "complete responds with turbo stream" do
-    todo = todos(:active)
+    todo = todos(:today_one)
 
     patch complete_todo_url(todo), as: :turbo_stream
 

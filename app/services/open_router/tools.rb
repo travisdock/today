@@ -5,11 +5,16 @@ module OpenRouter
       "type" => "function",
       "function" => {
         "name" => "create_todo",
-        "description" => "Create a new todo item with a title and optional target position (1-based).",
+        "description" => "Create a new todo item with a title, priority window, and optional target position (1-based).",
         "parameters" => {
           "type" => "object",
           "properties" => {
             "title" => { "type" => "string" },
+            "priority_window" => {
+              "type" => "string",
+              "enum" => Todo::PRIORITY_WINDOWS.map(&:to_s),
+              "description" => "The priority window for this todo. Defaults to 'today' if not specified."
+            },
             "position" => { "type" => "integer", "minimum" => 1 }
           },
           "required" => [ "title" ]
@@ -21,17 +26,22 @@ module OpenRouter
       "type" => "function",
       "function" => {
         "name" => "reorder_todos",
-        "description" => "Reorder todos by providing all todo IDs in the desired order.",
+        "description" => "Reorder todos within a specific priority window by providing all todo IDs for that window in the desired order.",
         "parameters" => {
           "type" => "object",
           "properties" => {
+            "priority_window" => {
+              "type" => "string",
+              "enum" => Todo::PRIORITY_WINDOWS.map(&:to_s),
+              "description" => "The priority window to reorder todos in"
+            },
             "ordered_ids" => {
               "type" => "array",
               "items" => { "type" => "integer" },
               "minItems" => 1
             }
           },
-          "required" => [ "ordered_ids" ]
+          "required" => [ "priority_window", "ordered_ids" ]
         }
       }
     }
@@ -50,6 +60,11 @@ module OpenRouter
                 "type" => "object",
                 "properties" => {
                   "title" => { "type" => "string" },
+                  "priority_window" => {
+                    "type" => "string",
+                    "enum" => Todo::PRIORITY_WINDOWS.map(&:to_s),
+                    "description" => "The priority window for this todo. Defaults to 'today' if not specified."
+                  },
                   "position" => { "type" => "integer", "minimum" => 1 }
                 },
                 "required" => [ "title" ]
@@ -62,6 +77,29 @@ module OpenRouter
       }
     }
 
-    TOOL_LIST = [ CREATE_TODO, BULK_CREATE_TODOS, REORDER_TODOS ].freeze
+    MOVE_TODO = {
+      "type" => "function",
+      "function" => {
+        "name" => "move_todo",
+        "description" => "Move a todo to a different priority window.",
+        "parameters" => {
+          "type" => "object",
+          "properties" => {
+            "todo_id" => {
+              "type" => "integer",
+              "description" => "The ID of the todo to move"
+            },
+            "priority_window" => {
+              "type" => "string",
+              "enum" => Todo::PRIORITY_WINDOWS.map(&:to_s),
+              "description" => "The target priority window to move the todo to"
+            }
+          },
+          "required" => [ "todo_id", "priority_window" ]
+        }
+      }
+    }
+
+    TOOL_LIST = [ CREATE_TODO, BULK_CREATE_TODOS, REORDER_TODOS, MOVE_TODO ].freeze
   end
 end

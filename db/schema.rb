@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_10_30_150000) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_03_125730) do
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -25,13 +25,16 @@ ActiveRecord::Schema[8.1].define(version: 2025_10_30_150000) do
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.integer "position", default: 0, null: false
+    t.string "priority_window", default: "today", null: false
     t.string "title", limit: 255, null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["user_id", "archived_at", "created_at"], name: "index_todos_on_user_active"
     t.index ["user_id", "archived_at"], name: "index_todos_on_user_archived", where: "archived_at IS NOT NULL"
-    t.index ["user_id", "position"], name: "index_todos_active_position", unique: true, where: "archived_at IS NULL"
+    t.index ["user_id", "priority_window", "position", "archived_at"], name: "index_todos_on_user_window_position"
+    t.index ["user_id", "priority_window", "position"], name: "index_todos_active_window_position", unique: true, where: "archived_at IS NULL"
     t.index ["user_id"], name: "index_todos_on_user_id"
+    t.check_constraint "priority_window IN ('today', 'tomorrow', 'this_week', 'next_week')", name: "priority_window_check"
   end
 
   create_table "users", force: :cascade do |t|

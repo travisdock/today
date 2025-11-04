@@ -11,7 +11,12 @@ export default class extends Sortable {
 
     return {
       ...options,
-      fallbackOnBody: true
+      fallbackOnBody: true,
+      group: {
+        name: 'todos',
+        pull: false,  // Don't allow dragging between windows
+        put: false    // Don't allow dropping from other windows
+      }
     }
   }
 
