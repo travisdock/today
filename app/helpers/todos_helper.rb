@@ -1,5 +1,5 @@
 module TodosHelper
-  PRIORITY_WINDOWS = [:today, :tomorrow, :this_week, :next_week].freeze
+  PRIORITY_WINDOWS = [ :today, :tomorrow, :this_week, :next_week ].freeze
   PRIORITY_WINDOW_Z_INDEX_BASE = 4
 
   def window_z_index(window)
