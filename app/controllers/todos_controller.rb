@@ -107,7 +107,6 @@ class TodosController < ApplicationController
         @todo.update!(archived_at: nil, priority_window: "today", position: next_position)
       end
       message = "Restored to active list."
-      target_window = "today"
     else
       # Archiving from priority window to archived
       @todo.update!(archived_at: Time.current)
