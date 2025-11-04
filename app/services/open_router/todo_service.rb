@@ -31,7 +31,7 @@ module OpenRouter
 
         # Efficient CASE update
         case_fragments = ordered_ids.each_with_index.map { "WHEN ? THEN ?" }.join(" ")
-        case_args = ordered_ids.each_with_index.flat_map { |id, idx| [ id, idx ] }
+        case_args = ordered_ids.each_with_index.flat_map { |id, idx| [ id, idx + 1 ] }
         update_sql = ActiveRecord::Base.sanitize_sql_array([
           "position = CASE id #{case_fragments} END",
           *case_args
