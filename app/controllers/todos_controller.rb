@@ -180,7 +180,7 @@ class TodosController < ApplicationController
 
       # Then update to final positions
       ids.each_with_index do |id, index|
-        current_user.todos.where(id: id).update_all(position: index, updated_at: Time.current)
+        current_user.todos.where(id: id).update_all(position: index + 1, updated_at: Time.current)
       end
     end
 
