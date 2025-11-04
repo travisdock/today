@@ -1,22 +1,18 @@
 class Todo < ApplicationRecord
   belongs_to :user
 
-  # Define enum for priority windows
   enum :priority_window, {
     today: "today",
     tomorrow: "tomorrow",
     this_week: "this_week",
     next_week: "next_week"
-  }, validate: false
+  }
 
   before_validation :assign_position, on: :create
   before_validation :normalize_title
 
   validates :title, presence: true, length: { maximum: 255 }
-  validates :priority_window, presence: true, inclusion: {
-    in: priority_windows.keys,
-    message: "must be today, tomorrow, this_week, or next_week"
-  }
+  validates :priority_window, presence: true
 
   # Updated scope to order by window priority, then position
   scope :active, -> {
