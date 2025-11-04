@@ -1,6 +1,18 @@
 class Todo < ApplicationRecord
   belongs_to :user
 
+  # Priority windows in display order
+  PRIORITY_WINDOWS = [:today, :tomorrow, :this_week, :next_week].freeze
+
+  # Priority window ordering for SQL queries
+  PRIORITY_WINDOW_ORDER = {
+    "today" => 1,
+    "tomorrow" => 2,
+    "this_week" => 3,
+    "next_week" => 4
+  }.freeze
+
+  # Define enum for priority windows
   enum :priority_window, {
     today: "today",
     tomorrow: "tomorrow",
@@ -16,16 +28,11 @@ class Todo < ApplicationRecord
 
   # Updated scope to order by window priority, then position
   scope :active, -> {
+    # Build CASE statement from PRIORITY_WINDOW_ORDER constant
+    case_conditions = PRIORITY_WINDOW_ORDER.map { |window, order| "WHEN '#{window}' THEN #{order}" }.join(" ")
+
     where(archived_at: nil)
-      .order(Arel.sql("
-        CASE priority_window
-          WHEN 'today' THEN 1
-          WHEN 'tomorrow' THEN 2
-          WHEN 'this_week' THEN 3
-          WHEN 'next_week' THEN 4
-        END,
-        position ASC
-      "))
+      .order(Arel.sql("CASE priority_window #{case_conditions} END, position ASC"))
   }
 
   scope :archived, -> { where.not(archived_at: nil).order(archived_at: :desc) }

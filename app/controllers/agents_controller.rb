@@ -52,7 +52,7 @@ class AgentsController < ApplicationController
         ]
 
         # Replace all priority window containers
-        [ :today, :tomorrow, :this_week, :next_week ].each do |window|
+        Todo::PRIORITY_WINDOWS.each do |window|
           window_todos = user.todos.active.where(priority_window: window).order(:position)
           streams << turbo_stream.replace("#{window}_list_container",
             partial: "todos/priority_window_container",

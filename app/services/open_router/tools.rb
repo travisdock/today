@@ -12,7 +12,7 @@ module OpenRouter
             "title" => { "type" => "string" },
             "priority_window" => {
               "type" => "string",
-              "enum" => [ "today", "tomorrow", "this_week", "next_week" ],
+              "enum" => Todo::PRIORITY_WINDOWS.map(&:to_s),
               "description" => "The priority window for this todo. Defaults to 'today' if not specified."
             },
             "position" => { "type" => "integer", "minimum" => 1 }
@@ -32,7 +32,7 @@ module OpenRouter
           "properties" => {
             "priority_window" => {
               "type" => "string",
-              "enum" => [ "today", "tomorrow", "this_week", "next_week" ],
+              "enum" => Todo::PRIORITY_WINDOWS.map(&:to_s),
               "description" => "The priority window to reorder todos in"
             },
             "ordered_ids" => {
@@ -62,7 +62,7 @@ module OpenRouter
                   "title" => { "type" => "string" },
                   "priority_window" => {
                     "type" => "string",
-                    "enum" => [ "today", "tomorrow", "this_week", "next_week" ],
+                    "enum" => Todo::PRIORITY_WINDOWS.map(&:to_s),
                     "description" => "The priority window for this todo. Defaults to 'today' if not specified."
                   },
                   "position" => { "type" => "integer", "minimum" => 1 }
@@ -91,7 +91,7 @@ module OpenRouter
             },
             "priority_window" => {
               "type" => "string",
-              "enum" => [ "today", "tomorrow", "this_week", "next_week" ],
+              "enum" => Todo::PRIORITY_WINDOWS.map(&:to_s),
               "description" => "The target priority window to move the todo to"
             }
           },
