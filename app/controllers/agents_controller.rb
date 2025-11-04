@@ -55,9 +55,8 @@ class AgentsController < ApplicationController
         [ :today, :tomorrow, :this_week, :next_week ].each do |window|
           window_todos = user.todos.active.where(priority_window: window).order(:position)
           streams << turbo_stream.replace("#{window}_list_container",
-            html: helpers.content_tag(:div, id: "#{window}_list_container", class: "priority-window-section relative", style: "z-index: #{window_z_index(window)};") do
-              render_to_string partial: "todos/priority_window", locals: { window: window, todos: window_todos }
-            end)
+            partial: "todos/priority_window_container",
+            locals: { window: window, todos: window_todos })
         end
 
         render turbo_stream: streams
@@ -108,11 +107,5 @@ class AgentsController < ApplicationController
         current = 1
       end
       current > RATE_LIMIT_MAX_REQUESTS
-    end
-
-    def window_z_index(window)
-      windows = [ :today, :tomorrow, :this_week, :next_week ]
-      index = windows.index(window)
-      4 - index
     end
 end

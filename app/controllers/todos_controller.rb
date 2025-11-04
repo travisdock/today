@@ -24,9 +24,8 @@ class TodosController < ApplicationController
             turbo_stream.replace("flash", partial: "shared/flash"),
             turbo_stream.replace("todo_form", partial: "todos/form", locals: { todo: fresh_form }),
             turbo_stream.replace("#{priority_window}_list_container",
-              html: helpers.content_tag(:div, id: "#{priority_window}_list_container", class: "priority-window-section relative", style: "z-index: #{window_z_index(priority_window)};") do
-                render_to_string partial: "todos/priority_window", locals: { window: priority_window.to_sym, todos: window_todos }
-              end)
+              partial: "todos/priority_window_container",
+              locals: { window: priority_window.to_sym, todos: window_todos })
           ]
 
           render turbo_stream: streams
@@ -70,9 +69,8 @@ class TodosController < ApplicationController
           # Replace the priority window container
           window_todos = current_user.todos.active.where(priority_window: priority_window).order(:position)
           streams << turbo_stream.replace("#{priority_window}_list_container",
-            html: helpers.content_tag(:div, id: "#{priority_window}_list_container", class: "priority-window-section relative", style: "z-index: #{window_z_index(priority_window)};") do
-              render_to_string partial: "todos/priority_window", locals: { window: priority_window.to_sym, todos: window_todos }
-            end)
+            partial: "todos/priority_window_container",
+            locals: { window: priority_window.to_sym, todos: window_todos })
         end
 
         render turbo_stream: streams
@@ -132,16 +130,14 @@ class TodosController < ApplicationController
 
           today_todos = current_user.todos.active.where(priority_window: "today").order(:position)
           streams << turbo_stream.replace("today_list_container",
-            html: helpers.content_tag(:div, id: "today_list_container", class: "priority-window-section relative", style: "z-index: #{window_z_index('today')};") do
-              render_to_string partial: "todos/priority_window", locals: { window: :today, todos: today_todos }
-            end)
+            partial: "todos/priority_window_container",
+            locals: { window: :today, todos: today_todos })
         else
           # Archive: Update priority window and archived section
           window_todos = current_user.todos.active.where(priority_window: old_priority_window).order(:position)
           streams << turbo_stream.replace("#{old_priority_window}_list_container",
-            html: helpers.content_tag(:div, id: "#{old_priority_window}_list_container", class: "priority-window-section relative", style: "z-index: #{window_z_index(old_priority_window)};") do
-              render_to_string partial: "todos/priority_window", locals: { window: old_priority_window.to_sym, todos: window_todos }
-            end)
+            partial: "todos/priority_window_container",
+            locals: { window: old_priority_window.to_sym, todos: window_todos })
 
           archived_todos = current_user.todos.archived
           streams << turbo_stream.replace("archived_list_container",
@@ -215,13 +211,11 @@ class TodosController < ApplicationController
         render turbo_stream: [
           turbo_stream.replace("flash", partial: "shared/flash"),
           turbo_stream.replace("#{old_window}_list_container",
-            html: helpers.content_tag(:div, id: "#{old_window}_list_container", class: "priority-window-section relative", style: "z-index: #{window_z_index(old_window)};") do
-              render_to_string partial: "todos/priority_window", locals: { window: old_window.to_sym, todos: old_window_todos }
-            end),
+            partial: "todos/priority_window_container",
+            locals: { window: old_window.to_sym, todos: old_window_todos }),
           turbo_stream.replace("#{new_window}_list_container",
-            html: helpers.content_tag(:div, id: "#{new_window}_list_container", class: "priority-window-section relative", style: "z-index: #{window_z_index(new_window)};") do
-              render_to_string partial: "todos/priority_window", locals: { window: new_window.to_sym, todos: new_window_todos }
-            end)
+            partial: "todos/priority_window_container",
+            locals: { window: new_window.to_sym, todos: new_window_todos })
         ]
       end
       format.html { redirect_to todos_path, notice: "Todo moved.", status: :see_other }
@@ -237,10 +231,6 @@ class TodosController < ApplicationController
       @todo = current_user.todos.find(params[:id])
     end
 
-    def todos_scope(section)
-      section == :archived ? current_user.todos.archived : current_user.todos.active
-    end
-
     def todo_params
       params.require(:todo).permit(:title, :priority_window)
     end
@@ -249,36 +239,7 @@ class TodosController < ApplicationController
       current_state ? nil : Time.current
     end
 
-    def target_stream_for(section, todo)
-      case section
-      when :archived
-        turbo_stream.prepend("archived_todo_items", partial: "todos/todo", locals: { todo:, section: })
-      else
-        insert_before = next_active_after(todo)
-        if insert_before
-          turbo_stream.before(insert_before, partial: "todos/todo", locals: { todo:, section: })
-        else
-          turbo_stream.append("active_todo_items", partial: "todos/todo", locals: { todo:, section: })
-        end
-      end
-    end
-
-    def next_active_after(todo)
-      next_todo = current_user.todos.active
-        .where("position > ?", todo.position)
-        .where.not(id: todo.id)
-        .order(position: :asc, created_at: :asc)
-        .first
-      next_todo ? helpers.dom_id(next_todo) : nil
-    end
-
     def archived_count_html
       render_to_string(partial: "todos/archived_count", locals: { count: current_user.todos.archived.count })
-    end
-
-    def window_z_index(window)
-      windows = [ "today", "tomorrow", "this_week", "next_week" ]
-      index = windows.index(window.to_s)
-      4 - index
     end
 end
