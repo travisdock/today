@@ -23,10 +23,11 @@
   </head>
 
   <body class="m-0 flex min-h-screen flex-col bg-[linear-gradient(180deg,#4d8bff_0%,#7bb3ff_35%,#ffe5c2_70%,#ffad82_100%)] bg-fixed font-sans text-slate-900">
-    <nav class="flex items-center justify-between px-6 py-4 text-slate-50 md:px-10">
-      <div class="text-lg font-semibold tracking-tight">
+    <nav class="flex items-center justify-between px-4 py-4 text-slate-50 sm:px-6 lg:px-8">
+      <div class="flex items-center">
         <% home_path = authenticated? ? todos_path : root_path %>
-        <%= link_to "Today", home_path, class: "transition hover:underline" %>
+        <%= link_to "Today", home_path,
+              class: "inline-flex items-center py-2 text-2xl font-semibold tracking-tight transition hover:underline" %>
       </div>
       <div class="space-x-3">
         <% if authenticated? %>
