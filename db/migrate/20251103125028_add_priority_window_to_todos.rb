@@ -3,10 +3,14 @@ class AddPriorityWindowToTodos < ActiveRecord::Migration[8.1]
     # Add priority_window as required enum field
     add_column :todos, :priority_window, :string, null: false, default: 'today'
 
-    # Backfill existing todos to 'today' window
+    # Backfill existing todos to 'today' window without loading the model
     reversible do |dir|
       dir.up do
-        Todo.where(priority_window: nil).update_all(priority_window: 'today')
+        execute <<~SQL
+          UPDATE todos
+          SET priority_window = 'today'
+          WHERE priority_window IS NULL
+        SQL
       end
     end
 

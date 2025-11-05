@@ -1,10 +1,10 @@
 class TodosController < ApplicationController
-  before_action :set_todo, only: %i[destroy complete archive move]
+  before_action :set_todo, only: %i[destroy complete move]
 
   def index
     @todo = current_user.todos.build(priority_window: :today)  # Default to today
     @active_todos_grouped = current_user.todos.active.group_by(&:priority_window)
-    @archived_todos = current_user.todos.archived
+    @completed_todos = current_user.todos.completed
   end
 
   def create
@@ -40,7 +40,7 @@ class TodosController < ApplicationController
         end
         format.html do
           @active_todos_grouped = current_user.todos.active.group_by(&:priority_window)
-          @archived_todos = current_user.todos.archived
+          @completed_todos = current_user.todos.completed
           render :index, status: :unprocessable_entity
         end
       end
@@ -49,7 +49,7 @@ class TodosController < ApplicationController
 
   def destroy
     priority_window = @todo.priority_window
-    is_archived = @todo.archived?
+    is_completed = @todo.completed?
     @todo.destroy
 
     respond_to do |format|
@@ -59,12 +59,12 @@ class TodosController < ApplicationController
           turbo_stream.replace("flash", partial: "shared/flash")
         ]
 
-        if is_archived
-          # Replace archived section
-          archived_todos = current_user.todos.archived
-          streams << turbo_stream.replace("archived_count", archived_count_html)
-          streams << turbo_stream.replace("archived_list_container",
-            html: render_to_string(partial: "todos/list_container", locals: { section: :archived, todos: archived_todos }))
+        if is_completed
+          # Replace completed section
+          completed_todos = current_user.todos.completed
+          streams << turbo_stream.replace("completed_count", completed_count_html)
+          streams << turbo_stream.replace("completed_list_container",
+            html: render_to_string(partial: "todos/list_container", locals: { section: :completed, todos: completed_todos }))
         else
           # Replace the priority window container
           window_todos = current_user.todos.active.where(priority_window: priority_window).order(:position)
@@ -81,36 +81,19 @@ class TodosController < ApplicationController
 
   def complete
     was_completed = @todo.completed?
-    @todo.update!(completed_at: toggle_timestamp(was_completed))
-    message = was_completed ? "Marked as undone." : "Marked as done."
-
-    respond_to do |format|
-      flash.now[:notice] = message
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace("flash", partial: "shared/flash"),
-          turbo_stream.replace(@todo, partial: "todos/todo", locals: { todo: @todo, section: @todo.priority_window })
-        ]
-      end
-      format.html { redirect_to todos_path, notice: message, status: :see_other }
-    end
-  end
-
-  def archive
     old_priority_window = @todo.priority_window
-    is_archived = @todo.archived?
 
-    if is_archived
-      # Restoring from archived to today
+    if was_completed
+      # Unmark as done - restore to today
       Todo.transaction do
         next_position = Todo.next_position_for_user_and_window(current_user, "today")
-        @todo.update!(archived_at: nil, priority_window: "today", position: next_position)
+        @todo.update!(completed_at: nil, priority_window: "today", position: next_position)
       end
-      message = "Restored to active list."
+      message = "Marked as undone."
     else
-      # Archiving from priority window to archived
-      @todo.update!(archived_at: Time.current)
-      message = "Archived."
+      # Mark as done
+      @todo.update!(completed_at: Time.current)
+      message = "Marked as done."
     end
 
     respond_to do |format|
@@ -118,29 +101,29 @@ class TodosController < ApplicationController
       format.turbo_stream do
         streams = [
           turbo_stream.replace("flash", partial: "shared/flash"),
-          turbo_stream.replace("archived_count", archived_count_html)
+          turbo_stream.replace("completed_count", completed_count_html)
         ]
 
-        if is_archived
-          # Restore: Update archived section and today window
-          archived_todos = current_user.todos.archived
-          streams << turbo_stream.replace("archived_list_container",
-            html: render_to_string(partial: "todos/list_container", locals: { section: :archived, todos: archived_todos }))
+        if was_completed
+          # Restore: Update completed section and today window
+          completed_todos = current_user.todos.completed
+          streams << turbo_stream.replace("completed_list_container",
+            html: render_to_string(partial: "todos/list_container", locals: { section: :completed, todos: completed_todos }))
 
           today_todos = current_user.todos.active.where(priority_window: "today").order(:position)
           streams << turbo_stream.replace("today_list_container",
             partial: "todos/priority_window_container",
             locals: { window: :today, todos: today_todos })
         else
-          # Archive: Update priority window and archived section
+          # Complete: Update priority window and completed section
           window_todos = current_user.todos.active.where(priority_window: old_priority_window).order(:position)
           streams << turbo_stream.replace("#{old_priority_window}_list_container",
             partial: "todos/priority_window_container",
             locals: { window: old_priority_window.to_sym, todos: window_todos })
 
-          archived_todos = current_user.todos.archived
-          streams << turbo_stream.replace("archived_list_container",
-            html: render_to_string(partial: "todos/list_container", locals: { section: :archived, todos: archived_todos }))
+          completed_todos = current_user.todos.completed
+          streams << turbo_stream.replace("completed_list_container",
+            html: render_to_string(partial: "todos/list_container", locals: { section: :completed, todos: completed_todos }))
         end
 
         render turbo_stream: streams
@@ -234,11 +217,8 @@ class TodosController < ApplicationController
       params.require(:todo).permit(:title, :priority_window)
     end
 
-    def toggle_timestamp(current_state)
-      current_state ? nil : Time.current
-    end
-
-    def archived_count_html
-      render_to_string(partial: "todos/archived_count", locals: { count: current_user.todos.archived.count })
+    def completed_count_html
+      count = current_user.todos.completed.count
+      render_to_string(partial: "todos/completed_count", locals: { count: count })
     end
 end

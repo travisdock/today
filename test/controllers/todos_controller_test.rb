@@ -31,8 +31,7 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
         todo: {
           title: "Protect attributes",
           user_id: other_user.id,
-          completed_at: Time.current,
-          archived_at: Time.current
+          completed_at: Time.current
         }
       }
     end
@@ -40,18 +39,17 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
     todo = Todo.order(:created_at).last
     assert_equal users(:one), todo.user
     assert_nil todo.completed_at
-    assert_nil todo.archived_at
   end
 
   test "reorders active todos" do
     first = todos(:today_one)
     second = todos(:today_two)
-    third = todos(:completed)
+    third = users(:one).todos.create!(title: "Third task", priority_window: "today")
 
     patch reorder_todos_url, params: { order: [ second.id, third.id, first.id ] }
 
     assert_response :success
-    assert_equal [ second.id, third.id, first.id ], users(:one).todos.where(priority_window: "today", archived_at: nil).order(:position).pluck(:id)
+    assert_equal [ second.id, third.id, first.id ], users(:one).todos.where(priority_window: "today", completed_at: nil).order(:position).pluck(:id)
   end
 
   test "rejects reorder with invalid ids" do
@@ -89,18 +87,6 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
     assert_not todo.reload.completed?
   end
 
-  test "toggles archive state" do
-    todo = todos(:today_one)
-
-    patch archive_todo_url(todo)
-    assert_redirected_to todos_url
-    assert todo.reload.archived?
-
-    patch archive_todo_url(todo)
-    assert_redirected_to todos_url
-    assert_not todo.reload.archived?
-  end
-
   test "destroys todo" do
     todo = todos(:today_one)
 
@@ -116,11 +102,6 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "prevents archiving other users todos" do
-    patch archive_todo_url(todos(:other_user))
-    assert_response :not_found
-  end
-
   test "prevents destroying other users todos" do
     delete todo_url(todos(:other_user))
     assert_response :not_found
@@ -133,8 +114,7 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal "text/vnd.turbo-stream.html", response.media_type
-    dom_id = ActionView::RecordIdentifier.dom_id(todo)
     assert_includes response.body, %(<turbo-stream action="replace" target="flash">)
-    assert_includes response.body, %(<turbo-stream action="replace" target="#{dom_id}">)
+    assert_includes response.body, %(<turbo-stream action="replace" target="completed_count">)
   end
 end

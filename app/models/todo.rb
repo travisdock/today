@@ -29,32 +29,26 @@ class Todo < ApplicationRecord
 
   # Updated scope to order by window priority, then position
   scope :active, -> {
-    where(archived_at: nil)
+    where(completed_at: nil)
       .order(Arel.sql(PRIORITY_WINDOW_CASE_SQL))
       .order(position: :asc)
   }
 
-  scope :archived, -> { where.not(archived_at: nil).order(archived_at: :desc) }
-
-  # Window-specific scopes
-  scope :in_today, -> { active.where(priority_window: "today") }
-  scope :in_tomorrow, -> { active.where(priority_window: "tomorrow") }
-  scope :in_this_week, -> { active.where(priority_window: "this_week") }
-  scope :in_next_week, -> { active.where(priority_window: "next_week") }
+  scope :completed, -> {
+    where.not(completed_at: nil)
+      .where("completed_at >= ?", 7.days.ago)
+      .order(completed_at: :desc)
+  }
 
   def completed?
     completed_at.present?
-  end
-
-  def archived?
-    archived_at.present?
   end
 
   private
     # UPDATED: Position scoped by priority_window
     def assign_position
       return unless user
-      return unless archived_at.nil?
+      return unless completed_at.nil?
       return if position.present? && position.positive?
 
       user.with_lock do
@@ -68,7 +62,7 @@ class Todo < ApplicationRecord
 
     # Updated to scope by priority window
     def self.next_position_for_user_and_window(user, window)
-      where(user_id: user.id, priority_window: window, archived_at: nil)
+      where(user_id: user.id, priority_window: window, completed_at: nil)
         .lock("FOR UPDATE")
         .maximum(:position).to_i + 1
     end
