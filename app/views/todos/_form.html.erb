@@ -1,7 +1,4 @@
 <div id="todo_form">
-  <h1 class="text-2xl font-semibold text-slate-900 sm:text-3xl">Today</h1>
-  <p class="mt-2 text-sm text-slate-600">Capture what needs to get done and mark it off as you go.</p>
-
   <%= form_with model: todo, url: todos_path, class: "mt-6 space-y-4" do |form| %>
     <div>
       <%= form.label :title, "Add a todo", class: "block text-xs font-semibold uppercase tracking-wide text-slate-600" %>
