@@ -24,11 +24,11 @@ class TodoTest < ActiveSupport::TestCase
     assert_equal "Walk dog", todo.title
   end
 
-  test "active scope returns non-archived todos in creation order" do
+  test "active scope returns non-completed todos in priority window order" do
     Todo.delete_all
-    first = Todo.create!(user: users(:one), title: "First")
-    second = Todo.create!(user: users(:one), title: "Second")
-    Todo.create!(user: users(:one), title: "Archived", archived_at: Time.current)
+    first = Todo.create!(user: users(:one), title: "First", priority_window: "today")
+    second = Todo.create!(user: users(:one), title: "Second", priority_window: "today")
+    Todo.create!(user: users(:one), title: "Completed", priority_window: "today", completed_at: Time.current)
 
     assert_equal [ first, second ], Todo.active.to_a
   end
@@ -36,20 +36,18 @@ class TodoTest < ActiveSupport::TestCase
   test "assigns position sequentially for active todos" do
     user = users(:one)
     priority_window = "today"
-    existing_max = user.todos.where(priority_window: priority_window, archived_at: nil).maximum(:position).to_i
+    existing_max = user.todos.where(priority_window: priority_window, completed_at: nil).maximum(:position).to_i
 
     todo = user.todos.create!(title: "Sequence test", priority_window: priority_window)
 
     assert_equal existing_max + 1, todo.position
   end
 
-  test "active scope orders by position" do
+  test "active scope orders by priority window and position" do
     Todo.delete_all
     user = users(:one)
-    todo_a = user.todos.create!(title: "A")
-    todo_b = user.todos.create!(title: "B")
-
-    todo_a.update!(position: todo_b.position + 1)
+    todo_a = user.todos.create!(title: "A", priority_window: "today", position: 2)
+    todo_b = user.todos.create!(title: "B", priority_window: "today", position: 1)
 
     assert_equal [ todo_b, todo_a ], user.todos.active.to_a
   end

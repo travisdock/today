@@ -9,12 +9,12 @@
     </div>
   <% end %>
 
-  <%# Archived Section %>
+  <%# Completed Section %>
   <div class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
     <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold text-slate-900">Archived</h2>
-      <%= render "todos/archived_count", count: archived_todos.count %>
+      <h2 class="text-xl font-semibold text-slate-900">Completed</h2>
+      <%= render "todos/completed_count", count: completed_todos.count %>
     </div>
-    <%= render "todos/list_container", section: :archived, todos: archived_todos %>
+    <%= render "todos/list_container", section: :completed, todos: completed_todos %>
   </div>
 </div>

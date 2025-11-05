@@ -7,7 +7,6 @@ Rails.application.routes.draw do
     end
     member do
       patch :complete
-      patch :archive
       patch :move
     end
   end
