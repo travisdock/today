@@ -50,6 +50,37 @@ module OpenRouter
       todo
     end
 
+    # Move multiple todos to a different priority window at once.
+    def bulk_move_todos!(todo_ids:, priority_window:)
+      raise ArgumentError, "todo_ids cannot be empty" if todo_ids.blank?
+
+      todos = @relation.where(id: todo_ids).to_a
+
+      # Validate all todos were found
+      if todos.size != todo_ids.size
+        found_ids = todos.map(&:id)
+        missing_ids = todo_ids - found_ids
+        raise ActiveRecord::RecordNotFound, "Todos not found: #{missing_ids.join(', ')}"
+      end
+
+      # Filter out todos already in target window
+      todos_to_move = todos.reject { |todo| todo.priority_window == priority_window }
+
+      return todos if todos_to_move.empty?
+
+      @relation.transaction do
+        # Get starting position in new window
+        next_position = @relation.where(priority_window: priority_window).maximum(:position).to_i + 1
+
+        todos_to_move.each do |todo|
+          todo.update!(priority_window: priority_window, position: next_position)
+          next_position += 1
+        end
+      end
+
+      todos
+    end
+
     private
       def create_todos!(todos)
         items = Array(todos).map do |item|
