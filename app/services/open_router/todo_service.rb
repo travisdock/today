@@ -2,6 +2,8 @@ module OpenRouter
   class TodoService
     def initialize(relation)
       @relation = relation
+      # Extract user from relation for TodoReorderingService
+      @user = extract_user_from_relation(relation)
     end
 
     # Read-only snapshot for LLM context
@@ -18,27 +20,15 @@ module OpenRouter
 
     # Reorder using exact ordered_ids (must include every id once) within a priority_window.
     def reorder_todos!(ordered_ids:, priority_window:)
-      window_relation = @relation.where(priority_window: priority_window)
-      ids = window_relation.pluck(:id)
-      raise ArgumentError, "ordered_ids must include all todos in the #{priority_window} window" unless Set.new(ids) == Set.new(ordered_ids) && ids.size == ordered_ids.size
-
-      @relation.transaction do
-        # Row lock to prevent races under concurrency
-        window_relation.lock(true).to_a
-
-        bump = window_relation.maximum(:position).to_i + ordered_ids.size + 1
-        window_relation.update_all([ "position = position + ?", bump ])
-
-        # Efficient CASE update
-        case_fragments = ordered_ids.each_with_index.map { "WHEN ? THEN ?" }.join(" ")
-        case_args = ordered_ids.each_with_index.flat_map { |id, idx| [ id, idx + 1 ] }
-        update_sql = ActiveRecord::Base.sanitize_sql_array([
-          "position = CASE id #{case_fragments} END",
-          *case_args
-        ])
-
-        window_relation.where(id: ordered_ids).update_all(update_sql)
-      end
+      TodoReorderingService.new(@user).reorder!(
+        ordered_ids: ordered_ids,
+        priority_window: priority_window
+      )
+    rescue TodoReorderingService::PartialReorderError => e
+      # OpenRouter API expects ArgumentError for validation failures
+      raise ArgumentError, e.message
+    rescue TodoReorderingService::Error => e
+      raise ArgumentError, e.message
     end
 
     # Create several todos in one request.
@@ -141,6 +131,18 @@ module OpenRouter
         ])
 
         window_relation.where(id: ids).update_all(update_sql)
+      end
+
+      def extract_user_from_relation(relation)
+        # The relation is scoped to a user (e.g., user.todos.active)
+        # Extract user from the first record, or from scope values
+        if relation.respond_to?(:scope_for_create) && relation.scope_for_create["user_id"]
+          User.find(relation.scope_for_create["user_id"])
+        elsif relation.first
+          relation.first.user
+        else
+          raise ArgumentError, "Cannot extract user from empty relation without user_id scope"
+        end
       end
   end
 end
