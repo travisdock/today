@@ -58,18 +58,6 @@ class TodoReorderingService
     end
   end
 
-  # Returns todos in current order for a window (useful for verification)
-  #
-  # @param priority_window [String, Symbol] The priority window
-  # @return [ActiveRecord::Relation<Todo>]
-  def current_order(priority_window:)
-    validate_priority_window!(priority_window)
-
-    @user.todos.active
-         .where(priority_window: priority_window.to_sym)
-         .order(:position)
-  end
-
   private
 
   # Validates that the priority window is valid

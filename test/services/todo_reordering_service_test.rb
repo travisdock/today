@@ -199,24 +199,6 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
     assert_equal 3, completed.reload.position  # Unchanged
   end
 
-  test "current_order returns todos in correct order" do
-    todo3 = @user.todos.create!(title: "Third", priority_window: :today, position: 3)
-    todo1 = @user.todos.create!(title: "First", priority_window: :today, position: 1)
-    todo2 = @user.todos.create!(title: "Second", priority_window: :today, position: 2)
-
-    ordered = @service.current_order(priority_window: :today)
-
-    assert_equal [todo1.id, todo2.id, todo3.id], ordered.pluck(:id)
-  end
-
-  test "current_order validates priority window" do
-    error = assert_raises(TodoReorderingService::InvalidWindowError) do
-      @service.current_order(priority_window: :invalid)
-    end
-
-    assert_match(/Invalid priority window/, error.message)
-  end
-
   test "handles reordering large lists efficiently" do
     # Create 50 todos
     todos = 50.times.map do |i|
