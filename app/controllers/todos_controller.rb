@@ -135,40 +135,22 @@ class TodosController < ApplicationController
   def reorder
     ids = Array(params[:order]).map(&:to_i)
 
-    return head :unprocessable_entity if ids.blank? || ids.any? { |id| id <= 0 }
-
     # Get the first todo to determine which window we're reordering
     first_todo = current_user.todos.find_by(id: ids.first)
     return head :unprocessable_entity unless first_todo
 
-    priority_window = first_todo.priority_window
-    reorder_failed = false
-
-    Todo.transaction do
-      # Lock todos in this specific priority window
-      lock_scope = current_user.todos.active.where(priority_window: priority_window).lock("FOR UPDATE")
-      window_ids = lock_scope.pluck(:id)
-
-      unless ids.sort == window_ids.sort
-        reorder_failed = true
-        raise ActiveRecord::Rollback
-      end
-
-      # Update positions within this window only
-      # First, set all positions to temporary negative values to avoid unique constraint conflicts
-      ids.each_with_index do |id, index|
-        current_user.todos.where(id: id).update_all(position: -(index + 1), updated_at: Time.current)
-      end
-
-      # Then update to final positions
-      ids.each_with_index do |id, index|
-        current_user.todos.where(id: id).update_all(position: index + 1, updated_at: Time.current)
-      end
-    end
-
-    return head :unprocessable_entity if reorder_failed
+    # Delegate to unified reordering service
+    TodoReorderingService.new(current_user).reorder!(
+      ordered_ids: ids,
+      priority_window: first_todo.priority_window
+    )
 
     head :ok
+  rescue TodoReorderingService::Error => e
+    Rails.logger.warn("Reorder failed for user #{current_user.id}: #{e.message}")
+    head :unprocessable_entity
+  rescue ActiveRecord::RecordNotFound
+    head :not_found
   end
 
   def move

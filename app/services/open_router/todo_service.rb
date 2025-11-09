@@ -1,7 +1,8 @@
 module OpenRouter
   class TodoService
-    def initialize(relation)
+    def initialize(relation, user:)
       @relation = relation
+      @user = user
     end
 
     # Read-only snapshot for LLM context
@@ -18,27 +19,13 @@ module OpenRouter
 
     # Reorder using exact ordered_ids (must include every id once) within a priority_window.
     def reorder_todos!(ordered_ids:, priority_window:)
-      window_relation = @relation.where(priority_window: priority_window)
-      ids = window_relation.pluck(:id)
-      raise ArgumentError, "ordered_ids must include all todos in the #{priority_window} window" unless Set.new(ids) == Set.new(ordered_ids) && ids.size == ordered_ids.size
-
-      @relation.transaction do
-        # Row lock to prevent races under concurrency
-        window_relation.lock(true).to_a
-
-        bump = window_relation.maximum(:position).to_i + ordered_ids.size + 1
-        window_relation.update_all([ "position = position + ?", bump ])
-
-        # Efficient CASE update
-        case_fragments = ordered_ids.each_with_index.map { "WHEN ? THEN ?" }.join(" ")
-        case_args = ordered_ids.each_with_index.flat_map { |id, idx| [ id, idx + 1 ] }
-        update_sql = ActiveRecord::Base.sanitize_sql_array([
-          "position = CASE id #{case_fragments} END",
-          *case_args
-        ])
-
-        window_relation.where(id: ordered_ids).update_all(update_sql)
-      end
+      TodoReorderingService.new(@user).reorder!(
+        ordered_ids: ordered_ids,
+        priority_window: priority_window
+      )
+    rescue TodoReorderingService::Error => e
+      # OpenRouter API expects ArgumentError for validation failures
+      raise ArgumentError, e.message
     end
 
     # Create several todos in one request.
@@ -58,6 +45,50 @@ module OpenRouter
       end
 
       todo
+    end
+
+    # Move multiple todos to a different priority window at once.
+    def bulk_move_todos!(todo_ids:, priority_window:)
+      raise ArgumentError, "todo_ids cannot be empty" if todo_ids.blank?
+
+      todos = @relation.where(id: todo_ids).to_a
+
+      # Validate all todos were found
+      if todos.size != todo_ids.size
+        found_ids = todos.map(&:id)
+        missing_ids = todo_ids - found_ids
+        raise ActiveRecord::RecordNotFound, "One or more todos not found or not accessible"
+      end
+
+      # Filter out todos already in target window
+      todos_to_move = todos.reject { |todo| todo.priority_window.to_s == priority_window.to_s }
+
+      return todos if todos_to_move.empty?
+
+      @relation.transaction do
+        # Lock target window to prevent concurrent reorders
+        target_window_todos = @relation.where(priority_window: priority_window)
+                                      .lock("FOR UPDATE")
+
+        # Get starting position in new window
+        next_position = target_window_todos.maximum(:position).to_i + 1
+
+        # Build CASE statement for efficient bulk update
+        when_clauses = todos_to_move.each_with_index.map { "WHEN ? THEN ?" }.join(" ")
+        positions = todos_to_move.each_with_index.map { |_, idx| next_position + idx }
+        params = todos_to_move.zip(positions).flat_map { |todo, pos| [ todo.id, pos ] }
+
+        update_sql = ActiveRecord::Base.sanitize_sql_array([
+          "priority_window = ?, position = CASE id #{when_clauses} END, updated_at = ?",
+          priority_window,
+          *params,
+          Time.current
+        ])
+
+        @relation.where(id: todos_to_move.map(&:id)).update_all(update_sql)
+      end
+
+      todos
     end
 
     private
