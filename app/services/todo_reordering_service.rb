@@ -22,8 +22,6 @@ class TodoReorderingService
   class InvalidIdsError < Error; end
   class PartialReorderError < Error; end
 
-  MAX_RETRIES = 3
-
   def initialize(user)
     @user = user
   end
@@ -44,21 +42,19 @@ class TodoReorderingService
     # Normalize to symbol for consistency
     window = priority_window.to_sym
 
-    with_deadlock_retry do
-      Todo.transaction do
-        # Get all active todos in this window for this user
-        window_todos = @user.todos.active
-                            .where(priority_window: window)
-                            .lock("FOR UPDATE")
+    Todo.transaction do
+      # Get all active todos in this window for this user
+      window_todos = @user.todos.active
+                          .where(priority_window: window)
+                          .lock("FOR UPDATE")
 
-        window_ids = window_todos.pluck(:id)
+      window_ids = window_todos.pluck(:id)
 
-        # Validate that ordered_ids matches exactly all todos in window
-        validate_ids_match_window!(window_ids, ordered_ids)
+      # Validate that ordered_ids matches exactly all todos in window
+      validate_ids_match_window!(window_ids, ordered_ids)
 
-        # Perform efficient reordering
-        reorder_todos_in_window(window_todos, ordered_ids)
-      end
+      # Perform efficient reordering
+      reorder_todos_in_window(window_todos, ordered_ids)
     end
   end
 
@@ -144,27 +140,5 @@ class TodoReorderingService
     ])
 
     window_todos.where(id: ordered_ids).update_all(update_sql)
-  end
-
-  # Retries the block on deadlock with exponential backoff
-  def with_deadlock_retry(&block)
-    retries = 0
-
-    begin
-      yield
-    rescue ActiveRecord::Deadlocked => e
-      retries += 1
-
-      if retries < MAX_RETRIES
-        # Linear backoff: 10ms, 20ms, 30ms
-        sleep(0.01 * retries)
-        retry
-      else
-        Rails.logger.error(
-          "TodoReorderingService deadlock after #{MAX_RETRIES} retries: #{e.message}"
-        )
-        raise
-      end
-    end
   end
 end
