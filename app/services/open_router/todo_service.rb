@@ -23,10 +23,8 @@ module OpenRouter
         ordered_ids: ordered_ids,
         priority_window: priority_window
       )
-    rescue TodoReorderingService::PartialReorderError => e
-      # OpenRouter API expects ArgumentError for validation failures
-      raise ArgumentError, e.message
     rescue TodoReorderingService::Error => e
+      # OpenRouter API expects ArgumentError for validation failures
       raise ArgumentError, e.message
     end
 
