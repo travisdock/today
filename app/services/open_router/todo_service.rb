@@ -1,9 +1,8 @@
 module OpenRouter
   class TodoService
-    def initialize(relation)
+    def initialize(relation, user:)
       @relation = relation
-      # Extract user from relation for TodoReorderingService
-      @user = extract_user_from_relation(relation)
+      @user = user
     end
 
     # Read-only snapshot for LLM context
@@ -175,18 +174,6 @@ module OpenRouter
         ])
 
         window_relation.where(id: ids).update_all(update_sql)
-      end
-
-      def extract_user_from_relation(relation)
-        # The relation is scoped to a user (e.g., user.todos.active)
-        # Extract user from the first record, or from scope values
-        if relation.respond_to?(:scope_for_create) && relation.scope_for_create["user_id"]
-          User.find(relation.scope_for_create["user_id"])
-        elsif relation.first
-          relation.first.user
-        else
-          raise ArgumentError, "Cannot extract user from empty relation without user_id scope"
-        end
       end
   end
 end

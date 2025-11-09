@@ -8,7 +8,7 @@ module OpenRouter
       user ||= Current.user
       raise ArgumentError, "Current user required" unless user
 
-      service = TodoService.new(user.todos.active)
+      service = TodoService.new(user.todos.active, user: user)
 
       messages = [
         {
