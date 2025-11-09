@@ -69,13 +69,26 @@ module OpenRouter
       return todos if todos_to_move.empty?
 
       @relation.transaction do
-        # Get starting position in new window
-        next_position = @relation.where(priority_window: priority_window).maximum(:position).to_i + 1
+        # Lock target window to prevent concurrent reorders
+        target_window_todos = @relation.where(priority_window: priority_window)
+                                      .lock("FOR UPDATE")
 
-        todos_to_move.each do |todo|
-          todo.update!(priority_window: priority_window, position: next_position)
-          next_position += 1
-        end
+        # Get starting position in new window
+        next_position = target_window_todos.maximum(:position).to_i + 1
+
+        # Build CASE statement for efficient bulk update
+        when_clauses = todos_to_move.each_with_index.map { "WHEN ? THEN ?" }.join(" ")
+        positions = todos_to_move.each_with_index.map { |_, idx| next_position + idx }
+        params = todos_to_move.zip(positions).flat_map { |todo, pos| [todo.id, pos] }
+
+        update_sql = ActiveRecord::Base.sanitize_sql_array([
+          "priority_window = ?, position = CASE id #{when_clauses} END, updated_at = ?",
+          priority_window,
+          *params,
+          Time.current
+        ])
+
+        @relation.where(id: todos_to_move.map(&:id)).update_all(update_sql)
       end
 
       todos
