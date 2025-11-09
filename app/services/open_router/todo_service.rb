@@ -60,7 +60,7 @@ module OpenRouter
       if todos.size != todo_ids.size
         found_ids = todos.map(&:id)
         missing_ids = todo_ids - found_ids
-        raise ActiveRecord::RecordNotFound, "Todos not found: #{missing_ids.join(', ')}"
+        raise ActiveRecord::RecordNotFound, "One or more todos not found or not accessible"
       end
 
       # Filter out todos already in target window
