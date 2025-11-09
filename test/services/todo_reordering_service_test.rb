@@ -15,7 +15,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
 
     # Reverse the order
     @service.reorder!(
-      ordered_ids: [todo3.id, todo2.id, todo1.id],
+      ordered_ids: [ todo3.id, todo2.id, todo1.id ],
       priority_window: :today
     )
 
@@ -30,7 +30,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
 
     # Test with string
     @service.reorder!(
-      ordered_ids: [todo2.id, todo1.id],
+      ordered_ids: [ todo2.id, todo1.id ],
       priority_window: "today"
     )
 
@@ -39,7 +39,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
 
     # Test with symbol
     @service.reorder!(
-      ordered_ids: [todo1.id, todo2.id],
+      ordered_ids: [ todo1.id, todo2.id ],
       priority_window: :today
     )
 
@@ -52,7 +52,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
 
     error = assert_raises(TodoReorderingService::InvalidWindowError) do
       @service.reorder!(
-        ordered_ids: [todo.id],
+        ordered_ids: [ todo.id ],
         priority_window: :invalid_window
       )
     end
@@ -75,7 +75,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
   test "raises error if ordered_ids contains non-integers" do
     error = assert_raises(TodoReorderingService::InvalidIdsError) do
       @service.reorder!(
-        ordered_ids: [1, "2", 3],
+        ordered_ids: [ 1, "2", 3 ],
         priority_window: :today
       )
     end
@@ -86,7 +86,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
   test "raises error if ordered_ids contains zero or negative numbers" do
     error = assert_raises(TodoReorderingService::InvalidIdsError) do
       @service.reorder!(
-        ordered_ids: [1, 0, -1],
+        ordered_ids: [ 1, 0, -1 ],
         priority_window: :today
       )
     end
@@ -97,7 +97,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
   test "raises error if ordered_ids contains duplicates" do
     error = assert_raises(TodoReorderingService::InvalidIdsError) do
       @service.reorder!(
-        ordered_ids: [1, 2, 2, 3],
+        ordered_ids: [ 1, 2, 2, 3 ],
         priority_window: :today
       )
     end
@@ -113,7 +113,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
     # Only include 2 of 3 todos
     error = assert_raises(TodoReorderingService::PartialReorderError) do
       @service.reorder!(
-        ordered_ids: [todo1.id, todo2.id],
+        ordered_ids: [ todo1.id, todo2.id ],
         priority_window: :today
       )
     end
@@ -128,7 +128,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
 
     error = assert_raises(TodoReorderingService::PartialReorderError) do
       @service.reorder!(
-        ordered_ids: [today_todo.id, tomorrow_todo.id],
+        ordered_ids: [ today_todo.id, tomorrow_todo.id ],
         priority_window: :today
       )
     end
@@ -147,7 +147,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
     # the other user's todo won't be in the current user's window
     error = assert_raises(TodoReorderingService::PartialReorderError) do
       @service.reorder!(
-        ordered_ids: [other_todo.id],
+        ordered_ids: [ other_todo.id ],
         priority_window: :today
       )
     end
@@ -161,7 +161,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
     tomorrow1 = @user.todos.create!(title: "Tomorrow 1", priority_window: :tomorrow, position: 1)
 
     @service.reorder!(
-      ordered_ids: [today2.id, today1.id],
+      ordered_ids: [ today2.id, today1.id ],
       priority_window: :today
     )
 
@@ -177,7 +177,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
     other_todo = other_user.todos.create!(title: "User 2 Todo", priority_window: :today, position: 1)
 
     @service.reorder!(
-      ordered_ids: [@user.todos.first.id],
+      ordered_ids: [ @user.todos.first.id ],
       priority_window: :today
     )
 
@@ -190,7 +190,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
     completed = @user.todos.create!(title: "Completed", priority_window: :today, position: 3, completed_at: 1.day.ago)
 
     @service.reorder!(
-      ordered_ids: [active2.id, active1.id],
+      ordered_ids: [ active2.id, active1.id ],
       priority_window: :today
     )
 
@@ -230,7 +230,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
     sleep 0.01
 
     @service.reorder!(
-      ordered_ids: [todo2.id, todo1.id],
+      ordered_ids: [ todo2.id, todo1.id ],
       priority_window: :today
     )
 
@@ -245,7 +245,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
     # The service validates IDs first, so it raises PartialReorderError
     assert_raises(TodoReorderingService::PartialReorderError) do
       @service.reorder!(
-        ordered_ids: [todo1.id, 99999],
+        ordered_ids: [ todo1.id, 99999 ],
         priority_window: :today
       )
     end
@@ -261,7 +261,7 @@ class TodoReorderingServiceTest < ActiveSupport::TestCase
       todo2 = @user.todos.create!(title: "Second", priority_window: window, position: 2)
 
       @service.reorder!(
-        ordered_ids: [todo2.id, todo1.id],
+        ordered_ids: [ todo2.id, todo1.id ],
         priority_window: window
       )
 

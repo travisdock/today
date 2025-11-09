@@ -115,11 +115,11 @@ class TodoReorderingService
     bump = max_position + ordered_ids.size + 1
 
     # Step 1: Bump all positions to temporary high values
-    window_todos.update_all(["position = position + ?", bump])
+    window_todos.update_all([ "position = position + ?", bump ])
 
     # Step 2: Use efficient CASE statement to set final positions in one query
     when_clauses = ordered_ids.map { "WHEN ? THEN ?" }.join(" ")
-    params = ordered_ids.each_with_index.flat_map { |id, idx| [id, idx + 1] }
+    params = ordered_ids.each_with_index.flat_map { |id, idx| [ id, idx + 1 ] }
 
     update_sql = ActiveRecord::Base.sanitize_sql_array([
       "position = CASE id #{when_clauses} END, updated_at = ?",

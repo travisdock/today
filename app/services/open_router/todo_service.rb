@@ -76,7 +76,7 @@ module OpenRouter
         # Build CASE statement for efficient bulk update
         when_clauses = todos_to_move.each_with_index.map { "WHEN ? THEN ?" }.join(" ")
         positions = todos_to_move.each_with_index.map { |_, idx| next_position + idx }
-        params = todos_to_move.zip(positions).flat_map { |todo, pos| [todo.id, pos] }
+        params = todos_to_move.zip(positions).flat_map { |todo, pos| [ todo.id, pos ] }
 
         update_sql = ActiveRecord::Base.sanitize_sql_array([
           "priority_window = ?, position = CASE id #{when_clauses} END, updated_at = ?",
