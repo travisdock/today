@@ -61,7 +61,7 @@ module OpenRouter
       end
 
       # Filter out todos already in target window
-      todos_to_move = todos.reject { |todo| todo.priority_window == priority_window }
+      todos_to_move = todos.reject { |todo| todo.priority_window.to_s == priority_window.to_s }
 
       return todos if todos_to_move.empty?
 
