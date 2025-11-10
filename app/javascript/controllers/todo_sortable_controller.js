@@ -12,6 +12,9 @@ export default class extends Sortable {
     return {
       ...options,
       fallbackOnBody: true,
+      delay: 200,
+      delayOnTouchOnly: true,
+      touchStartThreshold: 8,
       group: {
         name: 'todos',
         pull: false,  // Don't allow dragging between windows
