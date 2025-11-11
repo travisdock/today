@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Unified service for reordering todos within a priority window.
-# Handles both drag-and-drop UI reordering and OpenRouter API reordering.
+# Handles both drag-and-drop UI reordering and voice command reordering.
 #
 # Usage:
 #   # From controller (drag-and-drop):
@@ -10,7 +10,7 @@
 #     priority_window: :today
 #   )
 #
-#   # From OpenRouter API:
+#   # From voice command (via TodoService):
 #   TodoReorderingService.new(user).reorder!(
 #     ordered_ids: params[:ordered_ids],
 #     priority_window: params[:priority_window]
