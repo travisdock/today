@@ -1,6 +1,6 @@
 <% if section != :completed %>
   <li id="<%= dom_id(todo) %>" data-id="<%= todo.id %>" data-todo-id="<%= todo.id %>" class="relative flex flex-col gap-4 rounded-2xl border border-slate-200/70 bg-white px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-    <div class="flex items-center gap-3 sm:min-w-0">
+    <div class="flex items-center gap-3 pr-12 sm:min-w-0 sm:pr-0">
       <button type="button"
               role="checkbox"
               aria-checked="false"
@@ -9,7 +9,7 @@
               data-action="click->todo-checkbox#toggle"
               data-todo-checkbox-url-value="<%= complete_todo_path(todo) %>"
               data-todo-checkbox-delay-value="400"
-              class="todo-checkbox flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white text-transparent transition focus:outline-none focus:ring-2 focus:ring-blue-400">
+              class="todo-checkbox flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-transparent transition focus:outline-none focus:ring-2 focus:ring-blue-400">
         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 0 1.414l-7.25 7.25a1 1 0 0 1-1.414 0l-3.25-3.25a1 1 0 1 1 1.414-1.414l2.543 2.543 6.543-6.543a1 1 0 0 1 1.414 0Z" clip-rule="evenodd" />
         </svg>
@@ -18,7 +18,7 @@
         <p class="text-base font-medium text-slate-900"><%= todo.title %></p>
       </div>
     </div>
-    <div class="flex w-full flex-col gap-2 pr-12 sm:w-auto sm:flex-row sm:items-center sm:gap-3 sm:justify-end sm:pr-0">
+    <div class="flex w-full flex-col gap-2 pr-12 sm:w-auto sm:flex-row sm:items-center sm:gap-3 sm:justify-end sm:pr-12">
       <div class="flex flex-1 flex-wrap gap-2 sm:order-first sm:flex-none sm:justify-end">
         <%# Move to... dropdown %>
         <div class="relative inline-block" data-controller="dropdown">
