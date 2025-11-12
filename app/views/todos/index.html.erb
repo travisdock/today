@@ -1,10 +1,48 @@
 <% content_for :title, "My Todos" %>
 <% content_for :main_class, "flex flex-1 justify-center px-4 py-5 sm:px-6 lg:px-8" %>
 
-<div class="w-full max-w-3xl space-y-8">
+<div class="w-full max-w-3xl space-y-8 pb-32">
   <%= render "shared/flash" %>
   <section class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur">
     <%= render "todos/form", todo: @todo %>
   </section>
   <%= render "todos/lists", active_todos_grouped: @active_todos_grouped, completed_todos: @completed_todos %>
 </div>
+
+<% if Current.user&.voice_agent_enabled? %>
+  <%= form_with url: agents_path,
+                method: :post,
+                scope: nil,
+                multipart: true,
+                html: {
+                  class: "fixed bottom-4 right-2 z-50 flex flex-col items-end gap-3",
+                  data: { controller: "audio-recorder" }
+                } do %>
+    <input
+      type="file"
+      name="audio"
+      accept="audio/webm,audio/mp4,audio/mpeg"
+      data-audio-recorder-target="input"
+      class="hidden"
+    >
+    <div
+      id="agent_transcriptions"
+      class="flex w-full max-w-md flex-col gap-3"
+      aria-live="polite"
+    ></div>
+    <button
+      type="button"
+      data-action="audio-recorder#toggle"
+      data-audio-recorder-target="button"
+      class="flex h-20 w-20 items-center justify-center rounded-full bg-slate-900 text-slate-50 shadow-2xl transition hover:scale-105 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-400/40"
+      aria-pressed="false"
+      aria-label="Toggle voice recording"
+    >
+      <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 5.5a4 4 0 0 1 8 0v5a4 4 0 1 1-8 0z" />
+        <path d="M12 16.5v4" />
+        <path d="M15.5 20.5h-7" />
+      </svg>
+    </button>
+  <% end %>
+<% end %>
