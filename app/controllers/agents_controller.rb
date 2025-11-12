@@ -29,26 +29,21 @@ class AgentsController < ApplicationController
       return
     end
 
-    if openrouter_api_key.blank?
-      Rails.logger.error("OpenRouter API key missing")
-      respond_to_failure(:service_unavailable, "Transcription service unavailable right now.")
+    processor = VoiceCommandProcessor.new(user: user, audio_file: audio.tempfile)
+    result = processor.process
+
+    unless result[:success]
+      respond_to_failure(:bad_gateway, result[:message] || "Unable to process voice command.")
       return
     end
-
-    transcriber = OpenRouter::Transcribe.new(audio.tempfile.path)
-    transcription = transcriber.transcription
-
-    if transcription.blank?
-      respond_to_failure(:bad_gateway, "Unable to transcribe audio.")
-      return
-    end
-
-    OpenRouter::Agent.new.run(instructions: transcription, user: user)
 
     respond_to do |format|
       format.turbo_stream do
         streams = [
-          turbo_stream.update("audio_recorder_status", ERB::Util.html_escape("Tap to record again."))
+          turbo_stream.update("audio_recorder_status", ERB::Util.html_escape("Tap to record again.")),
+          turbo_stream.update("agent_transcriptions",
+            partial: "todos/agent_response",
+            locals: { message: result[:message] })
         ]
 
         # Replace all priority window containers
@@ -63,9 +58,10 @@ class AgentsController < ApplicationController
       end
     end
   rescue StandardError => error
-    Rails.logger.error("OpenRouter transcription failed: #{error.message}")
+    Rails.logger.error("Voice command processing failed: #{error.message}")
+    Rails.logger.error(error.backtrace.join("\n"))
     respond_to_failure(:bad_gateway, "Service failed.")
-    end
+  end
 
   private
     MAX_AUDIO_BYTES = 5.megabytes
@@ -75,17 +71,17 @@ class AgentsController < ApplicationController
     def respond_to_failure(status, message)
       respond_to do |format|
         format.turbo_stream do
-          render turbo_stream: turbo_stream.update("audio_recorder_status", ERB::Util.html_escape(message)), status: status
+          streams = [
+            turbo_stream.update("audio_recorder_status", ERB::Util.html_escape(message)),
+            turbo_stream.update("agent_transcriptions", "")
+          ]
+          render turbo_stream: streams, status: status
         end
         format.html do
           redirect_to todos_path, alert: message
         end
         format.json { head status }
       end
-    end
-
-    def openrouter_api_key
-      Rails.application.credentials.dig(:openrouter, :api_key)
     end
 
     def audio_upload_allowed?(upload)
