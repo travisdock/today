@@ -11,6 +11,7 @@ Rails.application.routes.draw do
     end
   end
   resources :agents, only: :create
+  get "privacy", to: "pages#privacy"
   root "sessions#new"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
