@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Handles microphone recording and submits the enclosing form with the audio file.
 export default class extends Controller {
-  static targets = ["button", "status", "input"]
+  static targets = ["button", "input"]
 
   connect() {
     this.mediaRecorder = null
@@ -28,14 +28,12 @@ export default class extends Controller {
 
   async startRecording() {
     if (!window.MediaRecorder || !navigator.mediaDevices?.getUserMedia) {
-      this.updateStatus("Recording not supported here")
       return
     }
 
     try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch (error) {
-      this.updateStatus("Microphone access denied")
       return
     }
 
@@ -43,7 +41,6 @@ export default class extends Controller {
       this.chunks = []
       this.mediaRecorder = new MediaRecorder(this.mediaStream)
     } catch (error) {
-      this.updateStatus("Unable to start recording")
       this.cleanupStream()
       return
     }
@@ -59,16 +56,14 @@ export default class extends Controller {
     this.mediaRecorder.start()
     this.buttonTarget.setAttribute("aria-pressed", "true")
     this.buttonTarget.className = this.defaultButtonClasses
-    this.buttonTarget.classList.remove("bg-slate-900/80")
-    this.buttonTarget.classList.add("bg-red-600")
+    this.buttonTarget.classList.remove("bg-slate-900", "hover:bg-slate-800")
+    this.buttonTarget.classList.add("bg-red-600", "hover:bg-red-700")
     this.buttonTarget.disabled = false
-    this.updateStatus("Recording… tap again to finish")
   }
 
   stopRecording() {
     if (!this.isRecording()) return
 
-    this.updateStatus("Processing recording…")
     this.buttonTarget.disabled = true
     this.mediaRecorder.stop()
   }
@@ -79,7 +74,6 @@ export default class extends Controller {
 
     if (!blob) {
       this.resetUi()
-      this.updateStatus("No audio captured")
       return
     }
 
@@ -89,7 +83,6 @@ export default class extends Controller {
     try {
       transfer = new DataTransfer()
     } catch (error) {
-      this.updateStatus("Browser cannot attach recording")
       this.resetUi()
       return
     }
@@ -97,9 +90,8 @@ export default class extends Controller {
     transfer.items.add(file)
     this.inputTarget.files = transfer.files
 
-    this.updateStatus("Submitting…")
     this.element.requestSubmit()
-    this.resetUi("Submitting…")
+    this.resetUi()
   }
 
   isRecording() {
@@ -125,15 +117,10 @@ export default class extends Controller {
     return "webm"
   }
 
-  updateStatus(message) {
-    this.statusTarget.textContent = message
-  }
-
-  resetUi(message = "Tap to record") {
+  resetUi() {
     this.buttonTarget.setAttribute("aria-pressed", "false")
     this.buttonTarget.className = this.defaultButtonClasses
     this.buttonTarget.disabled = false
-    this.updateStatus(message)
   }
 
   cleanupStream() {
