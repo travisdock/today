@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Handles microphone recording and submits the enclosing form with the audio file.
+// Supports both web audio API and Turbo Native bridges for iOS and Android.
 export default class extends Controller {
   static targets = ["button", "input"]
 
@@ -9,11 +10,108 @@ export default class extends Controller {
     this.mediaStream = null
     this.chunks = []
     this.defaultButtonClasses = this.buttonTarget.className
+    this.isNativeRecording = false
+    this.setupNativeBridgeListeners()
     this.resetUi()
   }
 
   disconnect() {
     this.cleanupStream()
+    this.removeNativeBridgeListeners()
+  }
+
+  // Detect if running in Turbo Native
+  isTurboNative() {
+    return window.turboNativeAvailable === true
+  }
+
+  // Detect if running in iOS Turbo Native
+  isTurboNativeIOS() {
+    return this.isTurboNative() &&
+           window.webkit?.messageHandlers?.startRecording !== undefined
+  }
+
+  // Detect if running in Android Turbo Native
+  isTurboNativeAndroid() {
+    return this.isTurboNative() &&
+           window.TurboNativeAudio !== undefined
+  }
+
+  // Setup event listeners for native bridge callbacks
+  setupNativeBridgeListeners() {
+    this.handleRecordingStarted = this.handleRecordingStarted.bind(this)
+    this.handleRecordingStopped = this.handleRecordingStopped.bind(this)
+    this.handleRecordingError = this.handleRecordingError.bind(this)
+
+    window.addEventListener('turboNative:recordingStarted', this.handleRecordingStarted)
+    window.addEventListener('turboNative:recordingStopped', this.handleRecordingStopped)
+    window.addEventListener('turboNative:recordingError', this.handleRecordingError)
+  }
+
+  removeNativeBridgeListeners() {
+    window.removeEventListener('turboNative:recordingStarted', this.handleRecordingStarted)
+    window.removeEventListener('turboNative:recordingStopped', this.handleRecordingStopped)
+    window.removeEventListener('turboNative:recordingError', this.handleRecordingError)
+  }
+
+  // Native bridge callback: recording started
+  handleRecordingStarted(event) {
+    if (event.detail?.success) {
+      this.isNativeRecording = true
+      this.updateRecordingUI()
+    } else {
+      // Clean up any existing streams if recording failed to start
+      this.cleanupStream()
+      this.resetUi()
+    }
+  }
+
+  // Native bridge callback: recording stopped
+  handleRecordingStopped(event) {
+    const audioData = event.detail?.audioData
+    if (!audioData) {
+      // Clean up resources even if no audio data received
+      this.cleanupStream()
+      this.isNativeRecording = false
+      this.resetUi()
+      return
+    }
+
+    // Parse the data (format: "base64data|filename")
+    const [base64Data, filename] = audioData.split('|')
+
+    // Convert base64 to blob
+    try {
+      const byteCharacters = atob(base64Data)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], { type: 'audio/m4a' })
+
+      const file = new File([blob], filename || 'recording.m4a', { type: 'audio/m4a' })
+      const transfer = new DataTransfer()
+      transfer.items.add(file)
+      this.inputTarget.files = transfer.files
+
+      this.element.requestSubmit()
+    } catch (error) {
+      console.error('Failed to process native audio:', error)
+    }
+
+    // Clean up media resources after processing
+    this.cleanupStream()
+    this.isNativeRecording = false
+    this.resetUi()
+  }
+
+  // Native bridge callback: recording error
+  handleRecordingError(event) {
+    // Clean up any media resources on error
+    this.cleanupStream()
+    this.isNativeRecording = false
+    this.resetUi()
   }
 
   async toggle(event) {
@@ -27,6 +125,18 @@ export default class extends Controller {
   }
 
   async startRecording() {
+    // Use native bridge if available
+    if (this.isTurboNativeIOS()) {
+      this.startNativeRecordingIOS()
+      return
+    }
+
+    if (this.isTurboNativeAndroid()) {
+      this.startNativeRecordingAndroid()
+      return
+    }
+
+    // Fall back to web audio API
     if (!window.MediaRecorder || !navigator.mediaDevices?.getUserMedia) {
       return
     }
@@ -54,18 +164,75 @@ export default class extends Controller {
     })
 
     this.mediaRecorder.start()
+    this.updateRecordingUI()
+  }
+
+  stopRecording() {
+    // Use native bridge if available
+    if (this.isNativeRecording) {
+      this.stopNativeRecording()
+      return
+    }
+
+    // Fall back to web audio API
+    if (!this.isRecording()) return
+
+    this.buttonTarget.disabled = true
+    this.mediaRecorder.stop()
+  }
+
+  // Start recording using iOS native bridge
+  startNativeRecordingIOS() {
+    try {
+      window.webkit.messageHandlers.startRecording.postMessage({})
+    } catch (error) {
+      console.error('Failed to start iOS native recording:', error)
+      // Clean up and reset state on error
+      this.cleanupStream()
+      this.isNativeRecording = false
+      this.resetUi()
+    }
+  }
+
+  // Start recording using Android native bridge
+  startNativeRecordingAndroid() {
+    try {
+      window.TurboNativeAudio.startRecording()
+    } catch (error) {
+      console.error('Failed to start Android native recording:', error)
+      // Clean up and reset state on error
+      this.cleanupStream()
+      this.isNativeRecording = false
+      this.resetUi()
+    }
+  }
+
+  // Stop recording using native bridge (works for both iOS and Android)
+  stopNativeRecording() {
+    this.buttonTarget.disabled = true
+
+    try {
+      if (this.isTurboNativeIOS()) {
+        window.webkit.messageHandlers.stopRecording.postMessage({})
+      } else if (this.isTurboNativeAndroid()) {
+        window.TurboNativeAudio.stopRecording()
+      }
+    } catch (error) {
+      console.error('Failed to stop native recording:', error)
+      // Clean up resources on error
+      this.cleanupStream()
+      this.isNativeRecording = false
+      this.resetUi()
+    }
+  }
+
+  // Update UI to show recording state
+  updateRecordingUI() {
     this.buttonTarget.setAttribute("aria-pressed", "true")
     this.buttonTarget.className = this.defaultButtonClasses
     this.buttonTarget.classList.remove("bg-slate-900", "hover:bg-slate-800")
     this.buttonTarget.classList.add("bg-red-600", "hover:bg-red-700")
     this.buttonTarget.disabled = false
-  }
-
-  stopRecording() {
-    if (!this.isRecording()) return
-
-    this.buttonTarget.disabled = true
-    this.mediaRecorder.stop()
   }
 
   handleStop() {
@@ -95,7 +262,7 @@ export default class extends Controller {
   }
 
   isRecording() {
-    return this.mediaRecorder?.state === "recording"
+    return this.isNativeRecording || this.mediaRecorder?.state === "recording"
   }
 
   createBlob() {
