@@ -9,39 +9,109 @@
 </div>
 
 <% if Current.user&.voice_agent_enabled? %>
-  <%= form_with url: agents_path,
-                method: :post,
-                scope: nil,
-                multipart: true,
-                html: {
-                  class: "fixed bottom-4 right-2 z-50 flex flex-col items-end gap-3",
-                  data: { controller: "audio-recorder" }
-                } do %>
-    <input
-      type="file"
-      name="audio"
-      accept="audio/webm,audio/mp4,audio/mpeg"
-      data-audio-recorder-target="input"
-      class="hidden"
-    >
-    <div
-      id="agent_transcriptions"
-      class="flex w-full max-w-md flex-col gap-3"
-      aria-live="polite"
-    ></div>
-    <button
-      type="button"
-      data-action="audio-recorder#toggle"
-      data-audio-recorder-target="button"
-      class="flex h-20 w-20 items-center justify-center rounded-full bg-slate-900 text-slate-50 shadow-2xl transition hover:scale-105 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-400/40"
-      aria-pressed="false"
-      aria-label="Toggle voice recording"
-    >
-      <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M8 5.5a4 4 0 0 1 8 0v5a4 4 0 1 1-8 0z" />
-        <path d="M12 16.5v4" />
-        <path d="M15.5 20.5h-7" />
-      </svg>
-    </button>
+  <% if Current.user.streaming_voice_enabled? %>
+    <%# Streaming Voice UI %>
+    <div class="fixed bottom-4 right-2 z-50 flex flex-col items-end gap-3" data-controller="streaming-audio-recorder">
+      <%# Error message display %>
+      <div
+        data-streaming-audio-recorder-target="error"
+        class="hidden max-w-md rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 shadow-lg border border-red-100"
+        role="alert"
+      ></div>
+
+      <%# Recording button %>
+      <button
+        type="button"
+        data-action="streaming-audio-recorder#toggleRecording"
+        data-streaming-audio-recorder-target="button"
+        class="idle flex h-20 w-20 items-center justify-center rounded-full bg-slate-900 text-slate-50 shadow-2xl transition hover:scale-105 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-400/40"
+        aria-label="Toggle voice recording"
+      >
+        <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 5.5a4 4 0 0 1 8 0v5a4 4 0 1 1-8 0z" />
+          <path d="M12 16.5v4" />
+          <path d="M15.5 20.5h-7" />
+        </svg>
+      </button>
+
+      <%# Status indicator (optional) %>
+      <div data-streaming-audio-recorder-target="status" class="sr-only"></div>
+    </div>
+
+    <style>
+      /* State-specific button styles */
+      [data-streaming-audio-recorder-target="button"].recording {
+        background-color: rgb(220, 38, 38) !important;
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+        box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.4) !important;
+      }
+
+      [data-streaming-audio-recorder-target="button"].recording:hover {
+        background-color: rgb(185, 28, 28) !important;
+      }
+
+      [data-streaming-audio-recorder-target="button"].processing {
+        background-color: rgb(37, 99, 235) !important;
+        opacity: 0.75;
+        cursor: wait;
+      }
+
+      [data-streaming-audio-recorder-target="button"].connecting {
+        background-color: rgb(202, 138, 4) !important;
+        opacity: 0.75;
+        cursor: wait;
+      }
+
+      [data-streaming-audio-recorder-target="button"].error {
+        background-color: rgb(127, 29, 29) !important;
+        box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.4) !important;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+    </style>
+  <% else %>
+    <%# Legacy Voice UI %>
+    <%= form_with url: agents_path,
+                  method: :post,
+                  scope: nil,
+                  multipart: true,
+                  html: {
+                    class: "fixed bottom-4 right-2 z-50 flex flex-col items-end gap-3",
+                    data: { controller: "audio-recorder" }
+                  } do %>
+      <input
+        type="file"
+        name="audio"
+        accept="audio/webm,audio/mp4,audio/mpeg"
+        data-audio-recorder-target="input"
+        class="hidden"
+      >
+      <div
+        id="agent_transcriptions"
+        class="flex w-full max-w-md flex-col gap-3"
+        aria-live="polite"
+      ></div>
+      <button
+        type="button"
+        data-action="audio-recorder#toggle"
+        data-audio-recorder-target="button"
+        class="flex h-20 w-20 items-center justify-center rounded-full bg-slate-900 text-slate-50 shadow-2xl transition hover:scale-105 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-400/40"
+        aria-pressed="false"
+        aria-label="Toggle voice recording"
+      >
+        <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 5.5a4 4 0 0 1 8 0v5a4 4 0 1 1-8 0z" />
+          <path d="M12 16.5v4" />
+          <path d="M15.5 20.5h-7" />
+        </svg>
+      </button>
+    <% end %>
   <% end %>
 <% end %>
