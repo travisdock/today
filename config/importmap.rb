@@ -9,3 +9,8 @@ pin "stimulus-sortable" # @4.1.1
 pin "@rails/request.js", to: "@rails--request.js.js" # @0.0.8
 pin "sortablejs" # @1.15.6
 pin "luxon", to: "https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.min.js"
+
+# Streaming voice command modules
+pin_all_from "app/javascript/utils", under: "utils"
+pin_all_from "app/javascript/services", under: "services"
+pin "@google/genai", to: "@google--genai.js" # @1.29.1
