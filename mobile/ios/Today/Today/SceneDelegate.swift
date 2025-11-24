@@ -4,10 +4,20 @@ import WebKit
 import AVFoundation
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    // Legacy batch recording (for audio_recorder_controller.js)
     private var audioRecorder: AVAudioRecorder?
     private var audioURL: URL?
+
+    // New streaming recording (for streaming_audio_recorder_controller.js)
+    private var audioEngine: AVAudioEngine?
+    private var isStreamingRecording = false
+    private var audioChunkCount = 0
+    private var audioProcessingQueue: DispatchQueue?
+    private var accumulatedAudioData = Data()
+
     var window: UIWindow?
     private lazy var navigationController = UINavigationController()
+    private var messageHandlersAdded = false
 
     // Automatically switches between development and production URLs
     // Debug builds (simulator/local testing): http://localhost:3000
@@ -93,9 +103,24 @@ extension SceneDelegate: SessionDelegate {
 
         // Setup audio bridge JavaScript handlers
         let contentController = session.webView.configuration.userContentController
-        contentController.add(self, name: "startRecording")
-        contentController.add(self, name: "stopRecording")
-        contentController.add(self, name: "isTurboNative")
+
+        // Remove existing handlers to prevent duplicates on reload
+        if #available(iOS 14.0, *) {
+            contentController.removeAllScriptMessageHandlers()
+            messageHandlersAdded = false
+        }
+
+        // Only add handlers if not already added (prevents crash on iOS < 14)
+        if !messageHandlersAdded {
+            // Legacy batch recording handlers
+            contentController.add(self, name: "startRecording")
+            contentController.add(self, name: "stopRecording")
+            // New streaming recording handlers
+            contentController.add(self, name: "startStreamingRecording")
+            contentController.add(self, name: "stopStreamingRecording")
+            contentController.add(self, name: "isTurboNative")
+            messageHandlersAdded = true
+        }
 
         // Set UI delegate to handle JavaScript dialogs (confirm, alert)
         session.webView.uiDelegate = self
@@ -166,6 +191,21 @@ extension SceneDelegate: WKScriptMessageHandler {
                     }
                 }
             }
+
+        case "startStreamingRecording":
+            startStreamingRecording { success in
+                let payload: [String: Any] = ["success": success]
+                if let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                    let script = "window.dispatchEvent(new CustomEvent('turboNative:streamingRecordingStarted', { detail: \(jsonString) }));"
+                    self.session.webView.evaluateJavaScript(script, completionHandler: nil)
+                }
+            }
+
+        case "stopStreamingRecording":
+            stopStreamingRecording()
+            let script = "window.dispatchEvent(new CustomEvent('turboNative:streamingRecordingStopped'));"
+            session.webView.evaluateJavaScript(script, completionHandler: nil)
 
         default:
             break
@@ -252,6 +292,247 @@ extension SceneDelegate: WKScriptMessageHandler {
         } catch {
             completionHandler(nil)
         }
+    }
+
+    // MARK: - Streaming Audio Recording Methods
+
+    private func startStreamingRecording(completionHandler: @escaping (Bool) -> Void) {
+        // Request microphone permission
+        AVAudioSession.sharedInstance().requestRecordPermission { [weak self] allowed in
+            guard allowed else {
+                DispatchQueue.main.async {
+                    completionHandler(false)
+                }
+                return
+            }
+
+            DispatchQueue.main.async {
+                self?.setupAndStartStreamingRecording(completionHandler: completionHandler)
+            }
+        }
+    }
+
+    private func setupAndStartStreamingRecording(completionHandler: @escaping (Bool) -> Void) {
+        print("[Audio] Setting up streaming recording")
+        audioChunkCount = 0
+        accumulatedAudioData = Data()
+
+        // Create background queue for audio processing
+        audioProcessingQueue = DispatchQueue(label: "com.today.audioProcessing", qos: .userInitiated)
+
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            try audioSession.setCategory(.record, mode: .default)
+            try audioSession.setActive(true)
+            print("[Audio] Audio session activated")
+
+            // Create audio engine
+            let engine = AVAudioEngine()
+            self.audioEngine = engine
+
+            let inputNode = engine.inputNode
+            let inputFormat = inputNode.outputFormat(forBus: 0)
+            print("[Audio] Input format: \(inputFormat)")
+
+            // We need 16kHz mono for Gemini
+            guard let outputFormat = AVAudioFormat(
+                commonFormat: .pcmFormatInt16,
+                sampleRate: 16000,
+                channels: 1,
+                interleaved: true
+            ) else {
+                print("[Audio] Error: Failed to create output audio format")
+                completionHandler(false)
+                return
+            }
+
+            // Create converter from input format to output format
+            guard let converter = AVAudioConverter(from: inputFormat, to: outputFormat) else {
+                print("[Audio] Error: Failed to create audio converter")
+                completionHandler(false)
+                return
+            }
+
+            // Install tap with larger buffer to reduce callback frequency
+            print("[Audio] Installing tap on input node with buffer size 4096")
+            inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] (buffer, time) in
+                guard let self = self else { return }
+                guard self.isStreamingRecording else { return }
+
+                self.audioChunkCount += 1
+
+                // Process audio on background queue
+                self.audioProcessingQueue?.async {
+                    // Convert buffer to 16kHz mono Int16 PCM
+                    guard let convertedBuffer = self.convertBuffer(buffer, using: converter, to: outputFormat) else {
+                        print("[Audio] Failed to convert buffer")
+                        return
+                    }
+
+                    // Extract Int16 data
+                    guard let channelData = convertedBuffer.int16ChannelData else {
+                        print("[Audio] No channel data in converted buffer")
+                        return
+                    }
+
+                    let frameLength = Int(convertedBuffer.frameLength)
+                    let int16Data = Data(bytes: channelData[0], count: frameLength * MemoryLayout<Int16>.size)
+
+                    // Accumulate data
+                    self.accumulatedAudioData.append(int16Data)
+
+                    // Send batched data every ~200ms (approximately every 2-3 buffers at 48kHz)
+                    // 4096 samples at 48kHz = ~85ms per buffer, so send every 2 buffers
+                    if self.audioChunkCount % 2 == 0 {
+                        let dataToSend = self.accumulatedAudioData
+                        self.accumulatedAudioData = Data() // Clear accumulator
+
+                        // Convert to base64 and send
+                        let base64String = dataToSend.base64EncodedString()
+
+                        // Send to JavaScript on main thread
+                        DispatchQueue.main.async {
+                            let payload: [String: Any] = ["audioChunk": base64String]
+                            if let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+                               let jsonString = String(data: jsonData, encoding: .utf8) {
+                                let script = "window.dispatchEvent(new CustomEvent('turboNative:audioChunk', { detail: \(jsonString) }));"
+                                self.session.webView.evaluateJavaScript(script, completionHandler: nil)
+                            }
+                        }
+
+                        if self.audioChunkCount % 10 == 0 {
+                            print("[Audio] Sent \(self.audioChunkCount / 2) batches (\(self.audioChunkCount) raw buffers)")
+                        }
+                    }
+                }
+            }
+
+            // Start the engine
+            print("[Audio] Starting audio engine...")
+            try engine.start()
+            self.isStreamingRecording = true
+            print("[Audio] Audio engine started successfully")
+            completionHandler(true)
+
+        } catch {
+            print("[Audio] ERROR setting up streaming recording: \(error.localizedDescription)")
+            completionHandler(false)
+        }
+    }
+
+    private func stopStreamingRecording() {
+        print("[Audio] Stopping streaming recording. Total chunks captured: \(audioChunkCount)")
+        isStreamingRecording = false
+
+        // Send any remaining accumulated audio data
+        audioProcessingQueue?.async { [weak self] in
+            guard let self = self else { return }
+
+            if !self.accumulatedAudioData.isEmpty {
+                print("[Audio] Flushing remaining \(self.accumulatedAudioData.count) bytes")
+                let base64String = self.accumulatedAudioData.base64EncodedString()
+                self.accumulatedAudioData = Data()
+
+                DispatchQueue.main.async {
+                    let payload: [String: Any] = ["audioChunk": base64String]
+                    if let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+                       let jsonString = String(data: jsonData, encoding: .utf8) {
+                        let script = "window.dispatchEvent(new CustomEvent('turboNative:audioChunk', { detail: \(jsonString) }));"
+                        self.session.webView.evaluateJavaScript(script, completionHandler: nil)
+                    }
+                }
+            }
+
+            // Send silence padding to help Gemini's VAD detect end of speech
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                print("[Audio] Sending silence padding...")
+                self.sendSilencePadding(durationSeconds: 0.5) { [weak self] in
+                    guard let self = self else { return }
+
+                    print("[Audio] Silence padding complete, stopping engine")
+                    if let engine = self.audioEngine {
+                        engine.inputNode.removeTap(onBus: 0)
+                        engine.stop()
+                        print("[Audio] Audio engine stopped")
+                    }
+
+                    self.audioEngine = nil
+                    self.audioProcessingQueue = nil
+
+                    // Deactivate audio session
+                    do {
+                        try AVAudioSession.sharedInstance().setActive(false)
+                        print("[Audio] Audio session deactivated")
+                    } catch {
+                        print("[Audio] Error deactivating audio session: \(error.localizedDescription)")
+                    }
+                }
+            }
+        }
+    }
+
+    private func sendSilencePadding(durationSeconds: Double, completion: @escaping () -> Void) {
+        let sampleRate = 16000.0
+        let totalSamples = Int(sampleRate * durationSeconds)
+        let chunkSize = 2048
+        let totalChunks = Int(ceil(Double(totalSamples) / Double(chunkSize)))
+
+        sendSilenceChunk(chunkIndex: 0, totalChunks: totalChunks, chunkSize: chunkSize, completion: completion)
+    }
+
+    private func sendSilenceChunk(chunkIndex: Int, totalChunks: Int, chunkSize: Int, completion: @escaping () -> Void) {
+        guard chunkIndex < totalChunks else {
+            // All chunks sent, call completion
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                completion()
+            }
+            return
+        }
+
+        // Create silence buffer
+        let silenceBuffer = [Int16](repeating: 0, count: chunkSize)
+        let silenceData = Data(bytes: silenceBuffer, count: chunkSize * MemoryLayout<Int16>.size)
+        let base64String = silenceData.base64EncodedString()
+
+        // Send to JavaScript
+        let payload: [String: Any] = ["audioChunk": base64String]
+        if let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            let script = "window.dispatchEvent(new CustomEvent('turboNative:audioChunk', { detail: \(jsonString) }));"
+            session.webView.evaluateJavaScript(script, completionHandler: nil)
+        }
+
+        // Schedule next chunk after a small delay (20ms to simulate real-time streaming)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) { [weak self] in
+            self?.sendSilenceChunk(chunkIndex: chunkIndex + 1, totalChunks: totalChunks, chunkSize: chunkSize, completion: completion)
+        }
+    }
+
+    // Convert audio buffer from input format to output format (16kHz mono Int16)
+    private func convertBuffer(_ buffer: AVAudioPCMBuffer, using converter: AVAudioConverter, to outputFormat: AVAudioFormat) -> AVAudioPCMBuffer? {
+        // Calculate output buffer capacity
+        let ratio = outputFormat.sampleRate / buffer.format.sampleRate
+        let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: outputFrameCapacity) else {
+            return nil
+        }
+
+        var error: NSError?
+        let inputBlock: AVAudioConverterInputBlock = { inNumPackets, outStatus in
+            outStatus.pointee = .haveData
+            return buffer
+        }
+
+        converter.convert(to: outputBuffer, error: &error, withInputFrom: inputBlock)
+
+        if let error = error {
+            print("Conversion error: \(error.localizedDescription)")
+            return nil
+        }
+
+        return outputBuffer
     }
 }
 

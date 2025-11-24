@@ -43,6 +43,9 @@ gem "tailwindcss-rails"
 
 gem "ruby_llm"
 
+# WebSocket client for Gemini Live API
+gem "websocket-client-simple"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
