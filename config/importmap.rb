@@ -9,3 +9,11 @@ pin "stimulus-sortable" # @4.1.1
 pin "@rails/request.js", to: "@rails--request.js.js" # @0.0.8
 pin "sortablejs" # @1.15.6
 pin "luxon", to: "https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/es6/luxon.min.js"
+
+# Action Cable
+pin "@rails/actioncable", to: "@rails--actioncable.js" # @8.1.100
+pin_all_from "app/javascript/channels", under: "channels"
+
+# Streaming voice command modules
+pin_all_from "app/javascript/utils", under: "utils"
+pin_all_from "app/javascript/services", under: "services"
