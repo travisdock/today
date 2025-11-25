@@ -72,35 +72,28 @@ export default class extends Controller {
     this.startAudioCapture()
   }
 
-  startAudioCapture() {
+  async startAudioCapture() {
     try {
       // Create audio context with 16kHz sample rate (Gemini requirement)
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 })
 
+      // Load AudioWorklet module
+      await this.audioContext.audioWorklet.addModule('/audio_processor_worklet.js')
+
       const source = this.audioContext.createMediaStreamSource(this.mediaStream)
 
-      // Create script processor for PCM capture (2048 buffer size)
-      this.audioProcessor = this.audioContext.createScriptProcessor(2048, 1, 1)
+      // Create AudioWorklet node
+      this.audioProcessor = new AudioWorkletNode(this.audioContext, 'audio-processor-worklet')
 
-      this.audioProcessor.onaudioprocess = (event) => {
-        if (!this.isRecording || !this.channel) return
+      // Receive processed audio from worklet
+      this.audioProcessor.port.onmessage = (event) => {
+        if (event.data.type === 'audio' && this.channel) {
+          // Convert ArrayBuffer to base64
+          const base64 = this.arrayBufferToBase64(event.data.data)
 
-        // Get PCM data from audio processing event
-        const inputData = event.inputBuffer.getChannelData(0) // Float32Array [-1, 1]
-
-        // Convert Float32 to Int16 PCM
-        const pcmData = new Int16Array(inputData.length)
-        for (let i = 0; i < inputData.length; i++) {
-          // Clamp to [-1, 1] and convert to 16-bit integer
-          const s = Math.max(-1, Math.min(1, inputData[i]))
-          pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF
+          // Send PCM audio chunk via Action Cable
+          this.channel.perform('receive_audio', { audio: base64 })
         }
-
-        // Convert Int16Array to base64
-        const base64 = this.arrayBufferToBase64(pcmData.buffer)
-
-        // Send PCM audio chunk via Action Cable
-        this.channel.perform('receive_audio', { audio: base64 })
       }
 
       // Connect audio nodes
@@ -176,6 +169,10 @@ export default class extends Controller {
     this.isRecording = false
 
     if (this.audioProcessor) {
+      // Send stop command to worklet
+      this.audioProcessor.port.postMessage({ command: 'stop' })
+      // Remove message handler to prevent memory leak
+      this.audioProcessor.port.onmessage = null
       this.audioProcessor.disconnect()
       this.audioProcessor = null
     }
