@@ -51,7 +51,7 @@ class GeminiStreamingChannel < ApplicationCable::Channel
   def send_turbo_stream_update(todo)
     html = ApplicationController.render(
       partial: "todos/streaming_update",
-      formats: [:turbo_stream],
+      formats: [ :turbo_stream ],
       locals: { todo: todo, user: current_user }
     )
 

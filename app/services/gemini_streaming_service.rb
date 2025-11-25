@@ -48,10 +48,10 @@ class GeminiStreamingService
 
     message = {
       realtime_input: {
-        media_chunks: [{
+        media_chunks: [ {
           mime_type: "audio/pcm",
           data: base64_audio
-        }]
+        } ]
       }
     }
 
@@ -73,10 +73,10 @@ class GeminiStreamingService
       setup: {
         model: "models/gemini-2.0-flash-exp",
         generation_config: {
-          response_modalities: ['TEXT']
+          response_modalities: [ "TEXT" ]
         },
         system_instruction: {
-          parts: [{
+          parts: [ {
             text: <<~INSTRUCTION
               You are a helpful todo assistant. Extract action items from user speech and create todos with appropriate priority windows. If no time is specified, default to "today".
 
@@ -95,7 +95,7 @@ class GeminiStreamingService
 
               Be responsive and extract todos in real-time as the user speaks.`
             INSTRUCTION
-          }]
+          } ]
         },
         tools: [
           {
@@ -119,14 +119,14 @@ class GeminiStreamingService
                           priority_window: {
                             type: "string",
                             description: "When the todo should be done",
-                            enum: ["today", "tomorrow", "this_week", "next_week"]
+                            enum: [ "today", "tomorrow", "this_week", "next_week" ]
                           }
                         },
-                        required: ["title", "priority_window"]
+                        required: [ "title", "priority_window" ]
                       }
                     }
                   },
-                  required: ["todos"]
+                  required: [ "todos" ]
                 }
               }
             ]
@@ -225,5 +225,4 @@ class GeminiStreamingService
     @ws.send(message.to_json)
     Rails.logger.info("[GeminiStreaming] ✅ Tool response sent: #{response.to_json}")
   end
-
 end
