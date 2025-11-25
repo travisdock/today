@@ -11,9 +11,24 @@ export default class extends Controller {
     this.mediaStream = null
     this.isRecording = false
     this.isStopping = false
+
+    // Detect if running in iOS Turbo Native
+    this.isNative = window.webkit?.messageHandlers?.startStreamingRecording !== undefined
+
+    if (this.isNative) {
+      // Listen for native audio chunks
+      this.handleNativeAudio = this.handleNativeAudio.bind(this)
+      this.handleNativeError = this.handleNativeError.bind(this)
+      window.addEventListener('turboNative:audioChunk', this.handleNativeAudio)
+      window.addEventListener('turboNative:streamingError', this.handleNativeError)
+    }
   }
 
   disconnect() {
+    if (this.isNative) {
+      window.removeEventListener('turboNative:audioChunk', this.handleNativeAudio)
+      window.removeEventListener('turboNative:streamingError', this.handleNativeError)
+    }
     this.cleanup()
   }
 
@@ -30,16 +45,7 @@ export default class extends Controller {
   async startRecording() {
     console.log('[GeminiStreaming] Starting recording')
 
-    // Request microphone access
-    try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    } catch (error) {
-      console.error('[GeminiStreaming] Failed to get microphone access:', error)
-      this.updateStatus('Microphone access denied')
-      return
-    }
-
-    // Subscribe to Action Cable channel
+    // Subscribe to Action Cable channel first
     this.channel = consumer.subscriptions.create("GeminiStreamingChannel", {
       connected() {
         console.log('[GeminiStreaming] Action Cable connected')
@@ -68,6 +74,51 @@ export default class extends Controller {
 
     // Wait a moment for subscription
     await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Start audio capture (native or web)
+    if (this.isNative) {
+      this.startNativeCapture()
+    } else {
+      this.startWebCapture()
+    }
+  }
+
+  startNativeCapture() {
+    console.log('[GeminiStreaming] Using native iOS audio capture')
+
+    // Request native streaming recording
+    window.webkit.messageHandlers.startStreamingRecording.postMessage({})
+
+    this.isRecording = true
+    this.updateButtonRecording()
+    this.updateStatus('Recording... (speak naturally with pauses)')
+  }
+
+  handleNativeAudio(event) {
+    if (!this.isRecording || !this.channel) return
+
+    // Send PCM chunk from native code via Action Cable
+    this.channel.perform('receive_audio', { audio: event.detail.audio })
+  }
+
+  handleNativeError(event) {
+    console.error('[GeminiStreaming] Native audio error:', event.detail.message)
+    this.updateStatus('Recording error: ' + event.detail.message)
+    this.cleanup()
+  }
+
+  async startWebCapture() {
+    console.log('[GeminiStreaming] Using web AudioWorklet capture')
+
+    // Request microphone access
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    } catch (error) {
+      console.error('[GeminiStreaming] Failed to get microphone access:', error)
+      this.updateStatus('Microphone access denied')
+      this.cleanup()
+      return
+    }
 
     this.startAudioCapture()
   }
@@ -135,6 +186,11 @@ export default class extends Controller {
     // Stop recording flag to halt audio processing
     this.isRecording = false
 
+    // Stop native or web recording
+    if (this.isNative) {
+      window.webkit.messageHandlers.stopStreamingRecording.postMessage({})
+    }
+
     // Wait for final chunks to be sent
     await new Promise(resolve => setTimeout(resolve, 100))
 
@@ -168,6 +224,16 @@ export default class extends Controller {
 
     this.isRecording = false
 
+    // Stop native recording if active
+    if (this.isNative && window.webkit?.messageHandlers?.stopStreamingRecording) {
+      try {
+        window.webkit.messageHandlers.stopStreamingRecording.postMessage({})
+      } catch (error) {
+        console.warn('[GeminiStreaming] Error stopping native recording:', error)
+      }
+    }
+
+    // Clean up web audio resources
     if (this.audioProcessor) {
       // Send stop command to worklet
       this.audioProcessor.port.postMessage({ command: 'stop' })
