@@ -1,0 +1,6 @@
+<%# Replace the entire priority window with fresh HTML %>
+<%= turbo_stream.replace "#{todo.priority_window}_priority_window" do %>
+  <%= render "todos/priority_window",
+             window: todo.priority_window,
+             todos: user.todos.active.where(priority_window: todo.priority_window) %>
+<% end %>
