@@ -13,6 +13,7 @@ class GeminiStreamingService
     @extracted_todos = []
     @on_todo_callback = nil
     @setup_complete = false
+    @todo_service = TodoService.new(@user.todos, user: @user)
   end
 
   def connect
@@ -175,36 +176,37 @@ class GeminiStreamingService
       Rails.logger.info("[GeminiStreaming] 📋 Arguments: #{args.to_json}")
 
       if name == "createTodos"
-        todos = args["todos"] || []
-        created_todos = []
+        todos_data = args["todos"] || []
 
-        todos.each do |todo_data|
-          Rails.logger.info("[GeminiStreaming] ⚡ TODO EXTRACTED: #{todo_data.to_json}")
+        Rails.logger.info("[GeminiStreaming] ⚡ TODO EXTRACTED: #{todos_data.to_json}")
 
-          begin
-            # Create the todo in the database
-            todo = @user.todos.create!(
-              title: todo_data["title"],
-              priority_window: todo_data["priority_window"]
-            )
+        begin
+          # Use TodoService to create todos (handles transactions and position assignment)
+          created_todos = @todo_service.bulk_create_todos!(todos: todos_data)
 
-            created_todos << todo
+          # Track and notify for each created todo
+          created_todos.each do |todo|
             @extracted_todos << todo
             @on_todo_callback&.call(todo)
-
             Rails.logger.info("[GeminiStreaming] ✅ TODO CREATED: ##{todo.id} - #{todo.title}")
-          rescue ActiveRecord::RecordInvalid => e
-            Rails.logger.error("[GeminiStreaming] ❌ Failed to create todo: #{e.message}")
-            # Continue processing other todos
           end
-        end
 
-        # Send positive response
-        send_tool_response(call_id, name, {
-          success: true,
-          created: created_todos.length,
-          message: "Created #{created_todos.length} todo(s)"
-        })
+          # Send positive response
+          send_tool_response(call_id, name, {
+            success: true,
+            created: created_todos.length,
+            message: "Created #{created_todos.length} todo(s)"
+          })
+        rescue ArgumentError, ActiveRecord::RecordInvalid => e
+          Rails.logger.error("[GeminiStreaming] ❌ Failed to create todos: #{e.message}")
+
+          # Send error response to Gemini
+          send_tool_response(call_id, name, {
+            success: false,
+            created: 0,
+            error: e.message
+          })
+        end
       end
     end
   end
