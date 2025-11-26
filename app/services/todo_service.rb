@@ -37,13 +37,17 @@ class TodoService
     todo = @relation.find(todo_id)
     raise ArgumentError, "Todo is already in #{priority_window}" if todo.priority_window == priority_window
 
+    # Store old priority window before moving
+    old_priority_window = todo.priority_window
+
     @relation.transaction do
       # Get next position in new window
       next_position = @relation.where(priority_window: priority_window).maximum(:position).to_i + 1
       todo.update!(priority_window: priority_window, position: next_position)
     end
 
-    todo
+    # Return both todo and old window so UI can update both locations
+    [ todo, old_priority_window ]
   end
 
   # Move multiple todos to a different priority window at once.
@@ -60,7 +64,10 @@ class TodoService
     # Filter out todos already in target window
     todos_to_move = todos.reject { |todo| todo.priority_window.to_s == priority_window.to_s }
 
-    return todos if todos_to_move.empty?
+    # Collect old priority windows before moving
+    old_priority_windows = todos_to_move.map(&:priority_window).uniq
+
+    return [ todos, [] ] if todos_to_move.empty?
 
     @relation.transaction do
       # Lock target window to prevent concurrent reorders
@@ -85,7 +92,8 @@ class TodoService
       @relation.where(id: todos_to_move.map(&:id)).update_all(update_sql)
     end
 
-    todos
+    # Return both todos and old windows so UI can update all affected locations
+    [ todos, old_priority_windows ]
   end
 
   private

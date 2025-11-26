@@ -1,6 +1,20 @@
-<%# Replace the entire priority window with fresh HTML %>
+<%# Replace the new priority window with fresh HTML %>
 <%= turbo_stream.replace "#{todo.priority_window}_priority_window" do %>
   <%= render "todos/priority_window",
              window: todo.priority_window,
              todos: user.todos.active.where(priority_window: todo.priority_window) %>
+<% end %>
+
+<%# If todo was moved from another window(s), also update the old window(s) %>
+<% if old_priority_window.present? %>
+  <% old_windows = Array(old_priority_window).uniq %>
+  <% old_windows.each do |old_window| %>
+    <% if old_window != todo.priority_window %>
+      <%= turbo_stream.replace "#{old_window}_priority_window" do %>
+        <%= render "todos/priority_window",
+                   window: old_window,
+                   todos: user.todos.active.where(priority_window: old_window) %>
+      <% end %>
+    <% end %>
+  <% end %>
 <% end %>

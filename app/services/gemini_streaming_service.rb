@@ -70,6 +70,10 @@ class GeminiStreamingService
   private
 
   def send_setup_message
+    # Get current todos context
+    todos_context = @todo_service.list_for_context
+    todos_json = JSON.pretty_generate(todos_context)
+
     setup = {
       setup: {
         model: "models/gemini-2.0-flash-exp",
@@ -79,22 +83,42 @@ class GeminiStreamingService
         system_instruction: {
           parts: [ {
             text: <<~INSTRUCTION
-              You are a helpful todo assistant. Extract action items from user speech and create todos with appropriate priority windows. If no time is specified, default to "today".
+              You are a voice-controlled todo list assistant. The user will give you voice commands to manage their todos.
 
-              Priority windows:
+              Todos are organized into 4 priority windows:
               - today: Tasks for today
               - tomorrow: Tasks for tomorrow
               - this_week: Tasks for this week
               - next_week: Tasks for next week
 
-              It is possible that a user will say something like "Tomorrow I need to clean the kitchen.." and you will call createTodos with "clean the kitchen" and "tomorrow" as the priority window. Then the user will continue speaking with ".. and buy groceries." In this case, you should call createTodos again with "buy groceries" and "tomorrow" as the priority window because the user was mentioning the next task in the same phrase. Be sure to group task priority windows correctly based on user phrasing.
+              CURRENT TODOS (grouped by priority window with IDs and positions):
+              #{todos_json}
+
+              Available tools:
+              1. createTodos - Create multiple todos at once with titles and priority windows
+              2. moveTodo - Move a single todo to a different priority window (requires todo_id)
+              3. bulkMoveTodos - Move multiple todos to a different priority window at once (requires todo_ids array)
+              4. reorderTodos - Reorder all todos within a priority window by providing the complete ordered list of IDs
+
+              CRITICAL RULES:
+              - You MUST use the tools to make changes - NEVER just respond with text
+              - ALWAYS call the appropriate tool before or while responding
+              - If you need to create todos, call createTodos
+              - If you need to move a todo, call moveTodo or bulkMoveTodos
+              - If you need to reorder todos, call reorderTodos
+              - After each successful tool call, you will receive updated_context with the current state of all todos
+              - Use this updated context for subsequent commands in the same conversation
+
+              When the user refers to a todo by title (e.g., "move walk the dogs to today"), you MUST:
+              1. Look up the todo in the CURRENT TODOS list above (or in updated_context from recent tool responses) to find its ID
+              2. Use that ID in the tool call
 
               Examples:
-              - "Add buy milk" → createTodos({items: ["Buy milk"], priority_window: "today"})
-              - "Add call dentist tomorrow" → createTodos({items: ["Call dentist"], priority_window: "tomorrow"})
-              - "Add buy groceries and clean house to my todos" → createTodos({items: ["Buy groceries", "Clean house"], priority_window: "today"})
+              - "Tomorrow I need to walk the dogs and buy groceries" → CALL createTodos with 2 todos for tomorrow
+              - "Move walk the dogs to today" → Find "walk the dogs" ID in the list above, then CALL moveTodo with that ID
+              - "Put buy groceries first tomorrow" → Find all todo IDs for tomorrow, CALL reorderTodos with buy groceries ID first
 
-              Be responsive and extract todos in real-time as the user speaks.`
+              Be responsive and process commands in real-time as the user speaks.
             INSTRUCTION
           } ]
         },
@@ -129,6 +153,65 @@ class GeminiStreamingService
                   },
                   required: [ "todos" ]
                 }
+              },
+              {
+                name: "moveTodo",
+                description: "Move a single todo to a different priority window",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    todo_id: {
+                      type: "integer",
+                      description: "The ID of the todo to move"
+                    },
+                    priority_window: {
+                      type: "string",
+                      description: "The target priority window to move the todo to",
+                      enum: [ "today", "tomorrow", "this_week", "next_week" ]
+                    }
+                  },
+                  required: [ "todo_id", "priority_window" ]
+                }
+              },
+              {
+                name: "bulkMoveTodos",
+                description: "Move multiple todos to a different priority window at once",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    todo_ids: {
+                      type: "array",
+                      items: { type: "integer" },
+                      description: "Array of todo IDs to move"
+                    },
+                    priority_window: {
+                      type: "string",
+                      description: "The target priority window to move all todos to",
+                      enum: [ "today", "tomorrow", "this_week", "next_week" ]
+                    }
+                  },
+                  required: [ "todo_ids", "priority_window" ]
+                }
+              },
+              {
+                name: "reorderTodos",
+                description: "Reorder todos within a specific priority window by providing all todo IDs for that window in the desired order",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    priority_window: {
+                      type: "string",
+                      description: "The priority window to reorder todos in",
+                      enum: [ "today", "tomorrow", "this_week", "next_week" ]
+                    },
+                    ordered_ids: {
+                      type: "array",
+                      items: { type: "integer" },
+                      description: "Array of todo IDs in the desired order"
+                    }
+                  },
+                  required: [ "priority_window", "ordered_ids" ]
+                }
               }
             ]
           }
@@ -137,7 +220,7 @@ class GeminiStreamingService
     }
 
     @ws.send(setup.to_json)
-    Rails.logger.info("[GeminiStreaming] Setup message sent")
+    Rails.logger.debug("[GeminiStreaming] Setup message sent")
   end
 
   def handle_gemini_message(data)
@@ -157,7 +240,7 @@ class GeminiStreamingService
       turn_complete = server_content["turnComplete"]
 
       if turn_complete
-        Rails.logger.info("[GeminiStreaming] ✅ Turn complete")
+        Rails.logger.debug("[GeminiStreaming] ✅ Turn complete")
       end
     end
   rescue JSON::ParserError => e
@@ -172,13 +255,11 @@ class GeminiStreamingService
       name = call["name"]
       args = call["args"]
 
-      Rails.logger.info("[GeminiStreaming] 🔧 Tool called: #{name}")
-      Rails.logger.info("[GeminiStreaming] 📋 Arguments: #{args.to_json}")
+      Rails.logger.debug("[GeminiStreaming] Tool called: #{name} with args: #{args.to_json}")
 
-      if name == "createTodos"
+      case name
+      when "createTodos"
         todos_data = args["todos"] || []
-
-        Rails.logger.info("[GeminiStreaming] ⚡ TODO EXTRACTED: #{todos_data.to_json}")
 
         begin
           # Use TodoService to create todos (handles transactions and position assignment)
@@ -188,13 +269,13 @@ class GeminiStreamingService
           created_todos.each do |todo|
             @extracted_todos << todo
             @on_todo_callback&.call(todo)
-            Rails.logger.info("[GeminiStreaming] ✅ TODO CREATED: ##{todo.id} - #{todo.title}")
           end
+
+          Rails.logger.info("[GeminiStreaming] Created #{created_todos.length} todo(s)")
 
           # Send positive response
           send_tool_response(call_id, name, {
             success: true,
-            created: created_todos.length,
             message: "Created #{created_todos.length} todo(s)"
           })
         rescue ArgumentError, ActiveRecord::RecordInvalid => e
@@ -203,7 +284,97 @@ class GeminiStreamingService
           # Send error response to Gemini
           send_tool_response(call_id, name, {
             success: false,
-            created: 0,
+            error: e.message
+          })
+        end
+
+      when "moveTodo"
+        todo_id = args["todo_id"]
+        priority_window = args["priority_window"]
+
+        begin
+          todo, old_priority_window = @todo_service.move_todo!(
+            todo_id: todo_id,
+            priority_window: priority_window
+          )
+
+          # Notify about the moved todo with both old and new windows
+          @on_todo_callback&.call(todo, old_priority_window)
+
+          send_tool_response(call_id, name, {
+            success: true,
+            message: "Moved '#{todo.title}' to #{priority_window}"
+          })
+        rescue ArgumentError, ActiveRecord::RecordNotFound => e
+          Rails.logger.error("[GeminiStreaming] ❌ Failed to move todo: #{e.message}")
+
+          send_tool_response(call_id, name, {
+            success: false,
+            error: e.message
+          })
+        end
+
+      when "bulkMoveTodos"
+        todo_ids = args["todo_ids"] || []
+        priority_window = args["priority_window"]
+
+        begin
+          todos, old_priority_windows = @todo_service.bulk_move_todos!(
+            todo_ids: todo_ids,
+            priority_window: priority_window
+          )
+
+          # Notify about first moved todo with all old windows to trigger UI updates
+          if todos.any?
+            @on_todo_callback&.call(todos.first, old_priority_windows)
+          end
+
+          moved_count = todos.count { |t| t.priority_window.to_s == priority_window.to_s }
+
+          message = if moved_count == 1
+            "Moved '#{todos.first.title}' to #{priority_window}"
+          else
+            "Moved #{moved_count} todos to #{priority_window}"
+          end
+
+          send_tool_response(call_id, name, {
+            success: true,
+            message: message
+          })
+        rescue ArgumentError, ActiveRecord::RecordNotFound => e
+          Rails.logger.error("[GeminiStreaming] ❌ Failed to move todos: #{e.message}")
+
+          send_tool_response(call_id, name, {
+            success: false,
+            error: e.message
+          })
+        end
+
+      when "reorderTodos"
+        priority_window = args["priority_window"]
+        ordered_ids = args["ordered_ids"] || []
+
+        begin
+          @todo_service.reorder_todos!(
+            priority_window: priority_window,
+            ordered_ids: ordered_ids
+          )
+
+          # Notify about reorder (send first todo to trigger UI update)
+          if ordered_ids.any?
+            first_todo = @user.todos.find(ordered_ids.first)
+            @on_todo_callback&.call(first_todo)
+          end
+
+          send_tool_response(call_id, name, {
+            success: true,
+            message: "Reordered todos in #{priority_window}"
+          })
+        rescue ArgumentError, ActiveRecord::RecordNotFound => e
+          Rails.logger.error("[GeminiStreaming] ❌ Failed to reorder todos: #{e.message}")
+
+          send_tool_response(call_id, name, {
+            success: false,
             error: e.message
           })
         end
@@ -212,6 +383,12 @@ class GeminiStreamingService
   end
 
   def send_tool_response(call_id, name, response)
+    # Add fresh context after successful changes
+    if response[:success]
+      todos_context = @todo_service.list_for_context
+      response[:updated_context] = todos_context
+    end
+
     message = {
       tool_response: {
         function_responses: [
@@ -225,6 +402,6 @@ class GeminiStreamingService
     }
 
     @ws.send(message.to_json)
-    Rails.logger.info("[GeminiStreaming] ✅ Tool response sent: #{response.to_json}")
+    Rails.logger.debug("[GeminiStreaming] Tool response sent for #{name}")
   end
 end

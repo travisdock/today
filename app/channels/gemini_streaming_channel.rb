@@ -29,9 +29,9 @@ class GeminiStreamingChannel < ApplicationCable::Channel
 
     # Create and connect to Gemini WebSocket
     @gemini_service = GeminiStreamingService.new(user: current_user)
-    @gemini_service.on_todo do |todo|
+    @gemini_service.on_todo do |todo, old_priority_window = nil|
       Rails.logger.info("[GeminiStreamingChannel] Todo extracted: #{todo.title}")
-      send_turbo_stream_update(todo)
+      send_turbo_stream_update(todo, old_priority_window)
     end
     @gemini_service.connect
   end
@@ -87,11 +87,11 @@ class GeminiStreamingChannel < ApplicationCable::Channel
 
   private
 
-  def send_turbo_stream_update(todo)
+  def send_turbo_stream_update(todo, old_priority_window = nil)
     html = ApplicationController.render(
       partial: "todos/streaming_update",
       formats: [ :turbo_stream ],
-      locals: { todo: todo, user: current_user }
+      locals: { todo: todo, user: current_user, old_priority_window: old_priority_window }
     )
 
     transmit({
