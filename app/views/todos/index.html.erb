@@ -9,6 +9,32 @@
 </div>
 
 <% if Current.user&.voice_agent_enabled? %>
+  <!-- Gemini Streaming POC Button -->
+  <div class="fixed bottom-4 left-2 z-50 flex flex-col items-start gap-3"
+       data-controller="gemini-streaming">
+    <div
+      id="gemini_streaming_status"
+      data-gemini-streaming-target="status"
+      class="rounded-lg bg-white px-4 py-2 text-sm text-slate-600 shadow-lg"
+    >
+      Click to start streaming
+    </div>
+    <button
+      type="button"
+      data-action="gemini-streaming#toggle"
+      data-gemini-streaming-target="button"
+      class="flex h-20 w-20 items-center justify-center rounded-full bg-green-600 text-white shadow-2xl transition hover:scale-105 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-400/40"
+      aria-label="Toggle Gemini streaming"
+    >
+      <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 5.5a4 4 0 0 1 8 0v5a4 4 0 1 1-8 0z" />
+        <path d="M12 16.5v4" />
+        <path d="M15.5 20.5h-7" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Existing Voice Agent Button -->
   <%= form_with url: agents_path,
                 method: :post,
                 scope: nil,

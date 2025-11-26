@@ -6,6 +6,7 @@ import AVFoundation
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private var audioRecorder: AVAudioRecorder?
     private var audioURL: URL?
+    private var streamingRecorder: StreamingAudioRecorder?
     var window: UIWindow?
     private lazy var navigationController = UINavigationController()
 
@@ -95,6 +96,8 @@ extension SceneDelegate: SessionDelegate {
         let contentController = session.webView.configuration.userContentController
         contentController.add(self, name: "startRecording")
         contentController.add(self, name: "stopRecording")
+        contentController.add(self, name: "startStreamingRecording")
+        contentController.add(self, name: "stopStreamingRecording")
         contentController.add(self, name: "isTurboNative")
 
         // Set UI delegate to handle JavaScript dialogs (confirm, alert)
@@ -165,6 +168,30 @@ extension SceneDelegate: WKScriptMessageHandler {
                         self.session.webView.evaluateJavaScript(script, completionHandler: nil)
                     }
                 }
+            }
+
+        case "startStreamingRecording":
+            // Initialize streaming recorder if needed
+            if streamingRecorder == nil {
+                streamingRecorder = StreamingAudioRecorder(webView: session.webView)
+            }
+
+            streamingRecorder?.startStreaming { success in
+                let payload: [String: Any] = ["success": success]
+                if let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                    let script = "window.dispatchEvent(new CustomEvent('turboNative:streamingStarted', { detail: \(jsonString) }));"
+                    self.session.webView.evaluateJavaScript(script, completionHandler: nil)
+                }
+            }
+
+        case "stopStreamingRecording":
+            streamingRecorder?.stopStreaming()
+            let payload: [String: Any] = ["success": true]
+            if let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                let script = "window.dispatchEvent(new CustomEvent('turboNative:streamingStopped', { detail: \(jsonString) }));"
+                self.session.webView.evaluateJavaScript(script, completionHandler: nil)
             }
 
         default:
@@ -252,6 +279,173 @@ extension SceneDelegate: WKScriptMessageHandler {
         } catch {
             completionHandler(nil)
         }
+    }
+}
+
+// MARK: - Streaming Audio Recorder
+class StreamingAudioRecorder: NSObject {
+    private var audioEngine: AVAudioEngine?
+    private var inputNode: AVAudioInputNode?
+    private weak var webView: WKWebView?
+    private var isRecording = false
+
+    init(webView: WKWebView) {
+        self.webView = webView
+        super.init()
+    }
+
+    func startStreaming(completionHandler: @escaping (Bool) -> Void) {
+        // Request microphone permission
+        AVAudioSession.sharedInstance().requestRecordPermission { [weak self] allowed in
+            guard allowed else {
+                DispatchQueue.main.async {
+                    completionHandler(false)
+                }
+                return
+            }
+
+            DispatchQueue.main.async {
+                self?.setupAndStartStreaming()
+                completionHandler(true)
+            }
+        }
+    }
+
+    private func setupAndStartStreaming() {
+        let audioSession = AVAudioSession.sharedInstance()
+
+        do {
+            try audioSession.setCategory(.record, mode: .default)
+            try audioSession.setActive(true)
+
+            audioEngine = AVAudioEngine()
+            inputNode = audioEngine?.inputNode
+
+            guard let inputNode = inputNode else {
+                sendError("Failed to access audio input")
+                return
+            }
+
+            // Get input format (hardware format, typically 48kHz)
+            let inputFormat = inputNode.outputFormat(forBus: 0)
+
+            // Create target format: 16kHz mono PCM16 (Gemini requirement)
+            guard let targetFormat = AVAudioFormat(
+                commonFormat: .pcmFormatInt16,
+                sampleRate: 16000,
+                channels: 1,
+                interleaved: true
+            ) else {
+                sendError("Failed to create target audio format")
+                return
+            }
+
+            // Create converter to resample from hardware format to 16kHz
+            guard let converter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
+                sendError("Failed to create audio converter")
+                return
+            }
+
+            // Install tap on input node
+            inputNode.installTap(onBus: 0, bufferSize: 2048, format: inputFormat) { [weak self] buffer, _ in
+                self?.processAudioBuffer(buffer, converter: converter, targetFormat: targetFormat)
+            }
+
+            try audioEngine?.start()
+            isRecording = true
+
+        } catch {
+            sendError("Failed to start audio engine: \(error.localizedDescription)")
+        }
+    }
+
+    private func processAudioBuffer(_ buffer: AVAudioPCMBuffer, converter: AVAudioConverter, targetFormat: AVAudioFormat) {
+        guard isRecording else { return }
+
+        // Calculate output buffer capacity
+        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
+        let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+
+        guard let outputBuffer = AVAudioPCMBuffer(
+            pcmFormat: targetFormat,
+            frameCapacity: outputFrameCapacity
+        ) else {
+            return
+        }
+
+        var error: NSError?
+        let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
+            outStatus.pointee = .haveData
+            return buffer
+        }
+
+        converter.convert(to: outputBuffer, error: &error, withInputFrom: inputBlock)
+
+        guard error == nil else {
+            return
+        }
+
+        // Get PCM16 data
+        guard let channelData = outputBuffer.int16ChannelData else {
+            return
+        }
+
+        let frameLength = Int(outputBuffer.frameLength)
+        let data = Data(bytes: channelData[0], count: frameLength * 2)
+        let base64 = data.base64EncodedString()
+
+        // Send to JavaScript
+        sendAudioChunk(base64)
+    }
+
+    private func sendAudioChunk(_ base64Audio: String) {
+        let payload: [String: Any] = ["audio": base64Audio]
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            return
+        }
+
+        let script = """
+        window.dispatchEvent(new CustomEvent('turboNative:audioChunk', {
+            detail: \(jsonString)
+        }));
+        """
+
+        DispatchQueue.main.async { [weak self] in
+            self?.webView?.evaluateJavaScript(script, completionHandler: nil)
+        }
+    }
+
+    private func sendError(_ message: String) {
+        let payload: [String: Any] = ["message": message]
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            return
+        }
+
+        let script = """
+        window.dispatchEvent(new CustomEvent('turboNative:streamingError', {
+            detail: \(jsonString)
+        }));
+        """
+
+        DispatchQueue.main.async { [weak self] in
+            self?.webView?.evaluateJavaScript(script, completionHandler: nil)
+        }
+    }
+
+    func stopStreaming() {
+        isRecording = false
+        inputNode?.removeTap(onBus: 0)
+        audioEngine?.stop()
+
+        let audioSession = AVAudioSession.sharedInstance()
+        try? audioSession.setActive(false)
+
+        audioEngine = nil
+        inputNode = nil
     }
 }
 
