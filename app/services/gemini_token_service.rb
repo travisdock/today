@@ -34,6 +34,8 @@ class GeminiTokenService
       conn = Faraday.new(url: GEMINI_AUTH_URL) do |f|
         f.request :json
         f.response :json
+        f.options.timeout = 5
+        f.options.open_timeout = 2
         f.adapter Faraday.default_adapter
       end
 
