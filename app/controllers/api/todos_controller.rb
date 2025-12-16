@@ -10,14 +10,9 @@ module Api
     before_action :check_rate_limit
 
     # POST /api/todos
-    # Creates todos from streaming voice command tool calls
+    # Creates multiple todos in a single request
     def create
       user = Current.user
-
-      unless user&.streaming_voice_enabled?
-        render json: { error: "Streaming voice is not enabled for your account." }, status: :forbidden
-        return
-      end
 
       items = params[:items]
       priority_window = params[:priority_window]
@@ -77,11 +72,6 @@ module Api
     # Moves multiple todos to a different priority window in a single request
     def bulk_move
       user = Current.user
-
-      unless user&.streaming_voice_enabled?
-        render json: { error: "Streaming voice is not enabled for your account." }, status: :forbidden
-        return
-      end
 
       todo_ids = params[:todo_ids]
       priority_window = params[:priority_window]
