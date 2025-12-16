@@ -16,9 +16,7 @@ export default class extends Controller {
     // Fetch token on page load (but don't connect WebSocket yet)
     try {
       await this.fetchEphemeralToken()
-      console.log("Token fetched - ready for voice commands")
     } catch (error) {
-      console.error("Failed to fetch token:", error)
       this.showError("Failed to initialize voice command system.")
     }
   }
@@ -48,9 +46,7 @@ export default class extends Controller {
 
       const data = await response.json()
       this.token = data.token
-      console.log("Ephemeral token fetched successfully")
     } catch (error) {
-      console.error("Token fetch error:", error)
       throw error
     }
   }
@@ -73,7 +69,6 @@ export default class extends Controller {
     try {
       // Initialize service on first recording
       if (!this.service) {
-        console.log("Initializing Gemini Live service...")
         this.service = new GeminiLiveService({
           token: this.token,
           onToolCall: this.handleToolCall.bind(this),
@@ -88,7 +83,6 @@ export default class extends Controller {
 
       await this.service.startRecording()
     } catch (error) {
-      console.error("Failed to start recording:", error)
       this.isRecording = false
       this.showError("Failed to start recording. Please check microphone permissions.")
     }
@@ -102,7 +96,6 @@ export default class extends Controller {
       this.isRecording = false
       await this.service?.stopRecording()
     } catch (error) {
-      console.error("Failed to stop recording:", error)
       this.showError("Failed to stop recording.")
     }
   }
@@ -139,8 +132,6 @@ export default class extends Controller {
    * Returns a Promise that resolves when the operation completes and DOM is updated
    */
   async handleToolCall(toolCall) {
-    console.log("Tool call received:", toolCall)
-
     if (toolCall.name === 'createTodos') {
       await this.handleCreateTodos(toolCall.args)
     } else if (toolCall.name === 'moveTodo') {
@@ -195,13 +186,8 @@ export default class extends Controller {
       // Use Turbo to process the stream response (Turbo is available globally)
       if (turboStream && window.Turbo) {
         window.Turbo.renderStreamMessage(turboStream)
-      } else {
-        console.warn("Turbo not available or empty response")
       }
-
-      console.log("Todos created successfully")
     } catch (error) {
-      console.error("Failed to create todos:", error)
       this.showError("Failed to create todos. Please try again.")
     }
   }
@@ -234,13 +220,8 @@ export default class extends Controller {
 
       if (turboStream && window.Turbo) {
         window.Turbo.renderStreamMessage(turboStream)
-      } else {
-        console.warn("Turbo not available or empty response")
       }
-
-      console.log(`Todo ${todo_id} moved to ${priority_window} successfully`)
     } catch (error) {
-      console.error("Failed to move todo:", error)
       this.showError("Failed to move todo. Please try again.")
     }
   }
@@ -274,10 +255,7 @@ export default class extends Controller {
       if (turboStream && window.Turbo) {
         window.Turbo.renderStreamMessage(turboStream)
       }
-
-      console.log(`${todo_ids.length} todos moved to ${priority_window} successfully`)
     } catch (error) {
-      console.error("Failed to bulk move todos:", error)
       this.showError("Failed to move todos. Please try again.")
     }
   }
@@ -339,7 +317,6 @@ export default class extends Controller {
    * Handle errors from Gemini service
    */
   handleError(message) {
-    console.error("Gemini service error:", message)
     this.showError(message)
   }
 

@@ -94,7 +94,7 @@ module Api
         service.bulk_move_todos!(todo_ids: todo_ids.map(&:to_i), priority_window: priority_window)
 
         # All affected windows (sources + target)
-        affected_windows = (source_windows + [priority_window]).uniq
+        affected_windows = (source_windows + [ priority_window ]).uniq
 
         respond_to do |format|
           format.turbo_stream do

@@ -83,21 +83,17 @@ export class GeminiLiveService {
         },
         callbacks: {
           onopen: () => {
-            console.log('Gemini Live Session Connected')
-            // Only start inactivity timer if we're not actively recording
             if (!this.isRecording) {
               this.resetInactivityTimer()
             }
           },
           onmessage: this.handleMessage.bind(this),
           onclose: () => {
-            console.log('Gemini Live Session Closed')
             this.session = null
             this.isRecording = false
             this.callbacks.onStateChange(AppState.IDLE)
           },
           onerror: (err) => {
-            console.error('Gemini Live API Error', err)
             this.callbacks.onError('Connection error with Gemini.')
             this.session = null
             this.isRecording = false
@@ -106,7 +102,6 @@ export class GeminiLiveService {
         },
       })
     } catch (error) {
-      console.error('Failed to connect:', error)
       this.callbacks.onError('Failed to connect to Gemini Live service.')
       this.callbacks.onStateChange(AppState.ERROR)
       throw error
@@ -120,22 +115,17 @@ export class GeminiLiveService {
     // Handle User Transcription
     const text = message.serverContent?.inputTranscription?.text
     if (text) {
-      console.log('Received transcription:', text)
       this.callbacks.onTranscript?.(text)
     }
 
     // Handle Tool Calls - forward to frontend and send response
     if (message.toolCall) {
-      console.log('Received tool call:', message.toolCall)
       this.processToolCalls(message.toolCall.functionCalls)
     }
 
     // Handle Turn Completion
     // Automatic VAD sends this after detecting speech pauses
     if (message.serverContent?.turnComplete) {
-      console.log('Turn complete received')
-
-      // Track when we received this turnComplete
       this.lastTurnCompleteTime = Date.now()
 
       // Clear processing timeout since we got the completion signal
@@ -147,12 +137,8 @@ export class GeminiLiveService {
       // Only return to IDLE if we're not actively recording
       // This allows Gemini to process pauses while user continues speaking
       if (!this.isRecording) {
-        console.log('Not recording - returning to idle')
         this.callbacks.onStateChange(AppState.IDLE)
         this.resetInactivityTimer()
-      } else {
-        console.log('Still recording - staying in recording state')
-        // Don't start inactivity timer while recording
       }
     }
   }
@@ -161,8 +147,6 @@ export class GeminiLiveService {
    * Start recording audio and streaming to Gemini
    */
   async startRecording() {
-    console.log('Starting recording...')
-
     // Set recording flag BEFORE connect to prevent race condition with onopen
     this.isRecording = true
     this.callbacks.onStateChange(AppState.RECORDING)
@@ -208,7 +192,6 @@ export class GeminiLiveService {
       this.source.connect(this.processor)
 
     } catch (error) {
-      console.error('Error accessing microphone:', error)
       this.callbacks.onError('Could not access microphone.')
       this.isRecording = false
       this.callbacks.onStateChange(AppState.IDLE)
@@ -220,7 +203,6 @@ export class GeminiLiveService {
    * Allows Gemini to finish processing and send remaining tool calls
    */
   async stopRecording() {
-    console.log('Stopping recording - signaling end of audio stream to Gemini...')
     this.isRecording = false
 
     try {
@@ -242,7 +224,6 @@ export class GeminiLiveService {
       }
 
       if (!this.session) {
-        console.log('No session to stop, returning to idle')
         this.callbacks.onStateChange(AppState.IDLE)
         return
       }
@@ -254,7 +235,6 @@ export class GeminiLiveService {
         : Infinity
 
       if (timeSinceLastTurnComplete < 2000) {
-        console.log('Recent turnComplete detected - returning to idle immediately')
         this.callbacks.onStateChange(AppState.IDLE)
         this.resetInactivityTimer()
         return
@@ -269,22 +249,19 @@ export class GeminiLiveService {
       // Signal end of audio stream to Gemini
       try {
         await this.session.sendRealtimeInput({ audioStreamEnd: true })
-        console.log('Audio stream end - waiting for Gemini to finish processing...')
       } catch (error) {
-        console.warn('Failed to send audioStreamEnd:', error)
+        // Ignore errors sending audioStreamEnd
       }
 
       // Add a reasonable timeout in case turnComplete never arrives
       this.processingTimer = setTimeout(() => {
         if (!this.isRecording && this.session) {
-          console.log('Processing timeout (5s) - returning to idle')
           this.callbacks.onStateChange(AppState.IDLE)
           this.resetInactivityTimer()
         }
       }, 5000) // 5 second timeout
 
     } catch (error) {
-      console.error('Error stopping recording:', error)
       this.callbacks.onError('Error stopping recording.')
       this.callbacks.onStateChange(AppState.IDLE)
     }
@@ -294,7 +271,6 @@ export class GeminiLiveService {
    * Disconnect from Gemini Live API (called on inactivity or page unload)
    */
   async disconnect() {
-    console.log('Disconnecting session')
     this.clearInactivityTimer()
 
     // Clear processing timer if active
@@ -323,7 +299,7 @@ export class GeminiLiveService {
         await this.inputAudioContext.close()
         this.inputAudioContext = null
       } catch (e) {
-        console.warn('Error closing audio context:', e)
+        // Ignore errors closing audio context
       }
     }
 
@@ -333,7 +309,7 @@ export class GeminiLiveService {
         this.session.close()
         this.session = null
       } catch (e) {
-        console.warn('Error closing session:', e)
+        // Ignore errors closing session
       }
     }
 
@@ -347,7 +323,6 @@ export class GeminiLiveService {
   resetInactivityTimer() {
     this.clearInactivityTimer()
     this.inactivityTimer = setTimeout(() => {
-      console.log('Inactivity timeout - disconnecting session')
       this.disconnect()
     }, INACTIVITY_TIMEOUT)
   }
@@ -418,10 +393,8 @@ export class GeminiLiveService {
               }
             }
           })
-          console.log('Tool response sent with updated context')
         }
       } catch (error) {
-        console.error(`Error processing tool call ${fc.name}:`, error)
         // Send error response to Gemini
         this.session?.sendToolResponse({
           functionResponses: {
