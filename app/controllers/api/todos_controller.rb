@@ -76,6 +76,8 @@ module Api
     private
 
     def check_rate_limit
+      return head :unauthorized unless Current.user
+
       key = "todos:rate:#{Current.user.id}"
       current = Rails.cache.increment(key, 1, expires_in: RATE_LIMIT_WINDOW)
       unless current
