@@ -37,7 +37,7 @@ class GeminiTokenService
         f.adapter Faraday.default_adapter
       end
 
-      api_key = Rails.application.credentials.gemini_api_key || ENV['GEMINI_API_KEY']
+      api_key = Rails.application.credentials.gemini_api_key || ENV["GEMINI_API_KEY"]
 
       response = conn.post do |req|
         req.headers["Content-Type"] = "application/json"
