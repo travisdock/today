@@ -127,32 +127,7 @@ export class GeminiLiveService {
     // Handle Tool Calls - forward to frontend and send response
     if (message.toolCall) {
       console.log('Received tool call:', message.toolCall)
-
-      for (const fc of message.toolCall.functionCalls) {
-        if (fc.name === 'createTodos') {
-          const args = fc.args
-          if (args?.items && Array.isArray(args.items)) {
-            this.callbacks.onToolCall({
-              id: fc.id,
-              name: fc.name,
-              args: args
-            })
-
-            // Send tool response back to Gemini
-            // Gemini may wait for this before sending turnComplete
-            this.session?.sendToolResponse({
-              functionResponses: {
-                id: fc.id,
-                name: fc.name,
-                response: {
-                  result: `Created ${args.items.length} todos.`
-                }
-              }
-            })
-            console.log('Tool response sent')
-          }
-        }
-      }
+      this.processToolCalls(message.toolCall.functionCalls)
     }
 
     // Handle Turn Completion
@@ -388,6 +363,80 @@ export class GeminiLiveService {
   }
 
   /**
+   * Process tool calls asynchronously to allow DOM updates before sending response
+   */
+  async processToolCalls(functionCalls) {
+    for (const fc of functionCalls) {
+      try {
+        let resultMessage = ''
+
+        if (fc.name === 'createTodos') {
+          const args = fc.args
+          if (args?.items && Array.isArray(args.items)) {
+            // Wait for the frontend to process the tool call and update DOM
+            await this.callbacks.onToolCall({
+              id: fc.id,
+              name: fc.name,
+              args: args
+            })
+            resultMessage = `Created ${args.items.length} todos.`
+          }
+        } else if (fc.name === 'moveTodo') {
+          const args = fc.args
+          if (args?.todo_id && args?.priority_window) {
+            await this.callbacks.onToolCall({
+              id: fc.id,
+              name: fc.name,
+              args: args
+            })
+            resultMessage = `Moved todo ${args.todo_id} to ${args.priority_window}.`
+          }
+        } else if (fc.name === 'bulkMoveTodos') {
+          const args = fc.args
+          if (args?.todo_ids && Array.isArray(args.todo_ids) && args?.priority_window) {
+            await this.callbacks.onToolCall({
+              id: fc.id,
+              name: fc.name,
+              args: args
+            })
+            resultMessage = `Moved ${args.todo_ids.length} todos to ${args.priority_window}.`
+          }
+        }
+
+        if (resultMessage) {
+          // Get fresh todos context after DOM has been updated
+          const updatedContext = this.callbacks.getTodosContext?.() || ''
+
+          // Send tool response back to Gemini with updated todos list
+          this.session?.sendToolResponse({
+            functionResponses: {
+              id: fc.id,
+              name: fc.name,
+              response: {
+                result: resultMessage,
+                updated_todos: updatedContext || 'No todos currently exist.'
+              }
+            }
+          })
+          console.log('Tool response sent with updated context')
+        }
+      } catch (error) {
+        console.error(`Error processing tool call ${fc.name}:`, error)
+        // Send error response to Gemini
+        this.session?.sendToolResponse({
+          functionResponses: {
+            id: fc.id,
+            name: fc.name,
+            response: {
+              error: `Failed to execute ${fc.name}: ${error.message}`
+            }
+          }
+        })
+      }
+    }
+  }
+
+  /**
    * Build tool declarations for Gemini
    */
   buildTools() {
@@ -411,6 +460,45 @@ export class GeminiLiveService {
           },
           required: ['items', 'priority_window'],
         },
+      },
+      {
+        name: 'moveTodo',
+        description: 'Moves a single todo item to a different priority window. Use when user says things like "move X to tomorrow" or "put X in this week".',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            todo_id: {
+              type: 'INTEGER',
+              description: 'The ID of the todo to move. Look up the ID from the CURRENT TODOS list by matching the title.',
+            },
+            priority_window: {
+              type: 'STRING',
+              enum: ['today', 'tomorrow', 'this_week', 'next_week'],
+              description: 'The target priority window to move the todo to.',
+            }
+          },
+          required: ['todo_id', 'priority_window'],
+        },
+      },
+      {
+        name: 'bulkMoveTodos',
+        description: 'Moves multiple todo items to a different priority window at once. Use when user wants to move several todos together.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            todo_ids: {
+              type: 'ARRAY',
+              items: { type: 'INTEGER' },
+              description: 'Array of todo IDs to move. Look up IDs from the CURRENT TODOS list by matching titles.',
+            },
+            priority_window: {
+              type: 'STRING',
+              enum: ['today', 'tomorrow', 'this_week', 'next_week'],
+              description: 'The target priority window to move the todos to.',
+            }
+          },
+          required: ['todo_ids', 'priority_window'],
+        },
       }
     ]
   }
@@ -419,34 +507,46 @@ export class GeminiLiveService {
    * Build system instruction for Gemini
    */
   buildSystemInstruction() {
+    // Get current todos from the page if callback is provided
+    const todosContext = this.callbacks.getTodosContext?.() || ''
+
     return {
       parts: [{
-        text: `You are a helpful todo assistant. Extract action items from user speech and create todos with appropriate priority windows.
+        text: `You are a voice-controlled todo list assistant. The user will give you voice commands to manage their todos.
 
-Priority windows:
-- today: Tasks for today
-- tomorrow: Tasks for tomorrow
-- this_week: Tasks for this week
-- next_week: Tasks for next week
+              Todos are organized into 4 priority windows:
+              - today: Tasks for today
+              - tomorrow: Tasks for tomorrow
+              - this_week: Tasks for this week
+              - next_week: Tasks for next week
 
-CRITICAL RULES:
-1. ONLY extract todos from the CURRENT audio stream (between when recording starts and audioStreamEnd signal)
-2. When the user mentions a task, immediately call the createTodos function with the appropriate priority window
-3. If no time is specified, default to "today"
-4. Do NOT generate any verbal responses or confirmations
-5. Complete your turn immediately after calling all necessary tool functions
+              ${todosContext ? `CURRENT TODOS (use these IDs when moving todos):
+${todosContext}` : 'No todos exist yet.'}
 
+              Available tools:
+              1. createTodos - Create multiple todos at once with titles and priority windows
+              2. moveTodo - Move a single todo to a different priority window (requires todo_id)
+              3. bulkMoveTodos - Move multiple todos to a different priority window at once (requires todo_ids array)
 
-Extract todos as the user speaks. You can call createTodos multiple times if the user mentions multiple tasks within the CURRENT audio stream. After the audio stream ends, finish processing any remaining todos from THIS stream only and complete your turn.
+              CRITICAL RULES:
+              - You MUST use the tools to make changes - NEVER just respond with text
+              - ALWAYS call the appropriate tool before or while responding
+              - If you need to create todos, call createTodos
+              - If you need to move a todo, call moveTodo or bulkMoveTodos
+              - When a user says "move X to Y", find the todo with a title matching X in the CURRENT TODOS list, get its ID, and call moveTodo
+              - IMPORTANT: After each tool call, you will receive an "updated_todos" field in the response containing the fresh list of all todos with their IDs. ALWAYS use this updated list for subsequent commands.
 
-It is possible that a user will say something like "Tomorrow I need to clean the kitchen.." and you will call createTodos with "clean the kitchen" and "tomorrow" as the priority window. Then the user will continue speaking with ".. and also buy groceries." In this case, you should call createTodos again with "buy groceries" and "tomorrow" as the priority window if it seems the user was mentioning these todos in the same phrase.
+              When the user refers to a todo by title (e.g., "move walk the dogs to today"), you MUST:
+              1. Look up the todo in the MOST RECENT todos list (either CURRENT TODOS above or updated_todos from the last tool response)
+              2. Use that exact ID in the moveTodo tool call
+              3. If you can't find an exact match, look for partial matches
 
-Examples:
-- "Add buy milk" → createTodos({items: ["Buy milk"], priority_window: "today"})
-- "Add call dentist tomorrow" → createTodos({items: ["Call dentist"], priority_window: "tomorrow"})
-- "Add buy groceries and clean house to my todos" → createTodos({items: ["Buy groceries", "Clean house"], priority_window: "today"})
+              Examples:
+              - "Tomorrow I need to walk the dogs and buy groceries" → CALL createTodos with items=["walk the dogs", "buy groceries"] and priority_window="tomorrow"
+              - "Move walk the dogs to today" → Find "walk the dogs" in CURRENT TODOS, get its ID (e.g., 42), then CALL moveTodo with todo_id=42 and priority_window="today"
+              - "Move all my tomorrow todos to this week" → Find all todo IDs in tomorrow section, CALL bulkMoveTodos with those IDs
 
-Be responsive and extract todos in real-time as the user speaks.`
+              Be responsive and process commands in real-time as the user speaks.`
       }]
     }
   }

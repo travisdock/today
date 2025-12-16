@@ -78,7 +78,8 @@ export default class extends Controller {
           token: this.token,
           onToolCall: this.handleToolCall.bind(this),
           onStateChange: this.updateStatus.bind(this),
-          onError: this.handleError.bind(this)
+          onError: this.handleError.bind(this),
+          getTodosContext: this.getTodosContext.bind(this)
         })
       }
 
@@ -107,45 +108,181 @@ export default class extends Controller {
   }
 
   /**
-   * Handle tool calls from Gemini (create todos)
+   * Get current todos from the DOM for Gemini context
+   * Returns a formatted string listing all todos with their IDs and priority windows
+   */
+  getTodosContext() {
+    const priorityWindows = ['today', 'tomorrow', 'this_week', 'next_week']
+    const lines = []
+
+    for (const window of priorityWindows) {
+      const container = document.getElementById(`${window}_todo_items`)
+      if (!container) continue
+
+      const todos = container.querySelectorAll('[data-todo-id]')
+      if (todos.length === 0) continue
+
+      lines.push(`${window.replace('_', ' ').toUpperCase()}:`)
+      todos.forEach(todo => {
+        const id = todo.dataset.todoId
+        const titleEl = todo.querySelector('p.font-medium')
+        const title = titleEl?.textContent?.trim() || 'Unknown'
+        lines.push(`  - ID: ${id}, Title: "${title}"`)
+      })
+    }
+
+    return lines.join('\n')
+  }
+
+  /**
+   * Handle tool calls from Gemini (create/move todos)
+   * Returns a Promise that resolves when the operation completes and DOM is updated
    */
   async handleToolCall(toolCall) {
     console.log("Tool call received:", toolCall)
 
     if (toolCall.name === 'createTodos') {
-      try {
-        const response = await fetch('/api/todos', {
-          method: 'POST',
+      await this.handleCreateTodos(toolCall.args)
+    } else if (toolCall.name === 'moveTodo') {
+      await this.handleMoveTodo(toolCall.args)
+    } else if (toolCall.name === 'bulkMoveTodos') {
+      await this.handleBulkMoveTodos(toolCall.args)
+    }
+
+    // Wait for Turbo Stream DOM updates to complete
+    await this.waitForDomUpdate()
+  }
+
+  /**
+   * Wait for DOM updates to settle after Turbo Stream processing
+   */
+  waitForDomUpdate() {
+    return new Promise(resolve => {
+      // Use requestAnimationFrame to wait for next paint cycle
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve()
+        })
+      })
+    })
+  }
+
+  /**
+   * Handle createTodos tool call
+   */
+  async handleCreateTodos(args) {
+    try {
+      const response = await fetch('/api/todos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.csrfToken,
+          'Accept': 'text/vnd.turbo-stream.html'
+        },
+        body: JSON.stringify({
+          items: args.items,
+          priority_window: args.priority_window
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Todo creation failed: ${response.status}`)
+      }
+
+      // Get the Turbo Stream response and process it
+      const turboStream = await response.text()
+
+      // Use Turbo to process the stream response (Turbo is available globally)
+      if (turboStream && window.Turbo) {
+        window.Turbo.renderStreamMessage(turboStream)
+      } else {
+        console.warn("Turbo not available or empty response")
+      }
+
+      console.log("Todos created successfully")
+    } catch (error) {
+      console.error("Failed to create todos:", error)
+      this.showError("Failed to create todos. Please try again.")
+    }
+  }
+
+  /**
+   * Handle moveTodo tool call - moves a single todo to a different priority window
+   */
+  async handleMoveTodo(args) {
+    try {
+      const { todo_id, priority_window } = args
+
+      const response = await fetch(`/todos/${todo_id}/move`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.csrfToken,
+          'Accept': 'text/vnd.turbo-stream.html'
+        },
+        body: JSON.stringify({
+          priority_window: priority_window
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Todo move failed: ${response.status}`)
+      }
+
+      // Get the Turbo Stream response and process it
+      const turboStream = await response.text()
+
+      if (turboStream && window.Turbo) {
+        window.Turbo.renderStreamMessage(turboStream)
+      } else {
+        console.warn("Turbo not available or empty response")
+      }
+
+      console.log(`Todo ${todo_id} moved to ${priority_window} successfully`)
+    } catch (error) {
+      console.error("Failed to move todo:", error)
+      this.showError("Failed to move todo. Please try again.")
+    }
+  }
+
+  /**
+   * Handle bulkMoveTodos tool call - moves multiple todos to a different priority window
+   */
+  async handleBulkMoveTodos(args) {
+    try {
+      const { todo_ids, priority_window } = args
+
+      // Move each todo sequentially to ensure proper Turbo Stream handling
+      for (const todoId of todo_ids) {
+        const response = await fetch(`/todos/${todoId}/move`, {
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRF-Token': this.csrfToken,
             'Accept': 'text/vnd.turbo-stream.html'
           },
           body: JSON.stringify({
-            items: toolCall.args.items,
-            priority_window: toolCall.args.priority_window
+            priority_window: priority_window
           })
         })
 
         if (!response.ok) {
-          throw new Error(`Todo creation failed: ${response.status}`)
+          console.error(`Failed to move todo ${todoId}: ${response.status}`)
+          continue
         }
 
         // Get the Turbo Stream response and process it
         const turboStream = await response.text()
 
-        // Use Turbo to process the stream response (Turbo is available globally)
         if (turboStream && window.Turbo) {
           window.Turbo.renderStreamMessage(turboStream)
-        } else {
-          console.warn("Turbo not available or empty response")
         }
-
-        console.log("Todos created successfully")
-      } catch (error) {
-        console.error("Failed to create todos:", error)
-        this.showError("Failed to create todos. Please try again.")
       }
+
+      console.log(`${todo_ids.length} todos moved to ${priority_window} successfully`)
+    } catch (error) {
+      console.error("Failed to bulk move todos:", error)
+      this.showError("Failed to move todos. Please try again.")
     }
   }
 
