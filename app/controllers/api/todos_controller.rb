@@ -5,7 +5,7 @@ module Api
     RATE_LIMIT_MAX_REQUESTS = 20
     RATE_LIMIT_WINDOW = 1.minute
     MAX_BULK_CREATE_SIZE = 50
-    MAX_ITEM_LENGTH = 500
+    MAX_ITEM_LENGTH = 255
 
     before_action :check_rate_limit
 
