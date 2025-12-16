@@ -73,6 +73,65 @@ module Api
       end
     end
 
+    # PATCH /api/todos/bulk_move
+    # Moves multiple todos to a different priority window in a single request
+    def bulk_move
+      user = Current.user
+
+      unless user&.streaming_voice_enabled?
+        render json: { error: "Streaming voice is not enabled for your account." }, status: :forbidden
+        return
+      end
+
+      todo_ids = params[:todo_ids]
+      priority_window = params[:priority_window]
+
+      unless todo_ids.is_a?(Array) && todo_ids.present?
+        render json: { error: "todo_ids must be a non-empty array" }, status: :unprocessable_entity
+        return
+      end
+
+      unless Todo.priority_windows.keys.include?(priority_window)
+        render json: { error: "Invalid priority window" }, status: :unprocessable_entity
+        return
+      end
+
+      begin
+        # Get source windows before move to know which containers to update
+        source_windows = user.todos.where(id: todo_ids).pluck(:priority_window).uniq
+
+        service = TodoService.new(user.todos, user: user)
+        service.bulk_move_todos!(todo_ids: todo_ids.map(&:to_i), priority_window: priority_window)
+
+        # All affected windows (sources + target)
+        affected_windows = (source_windows + [priority_window]).uniq
+
+        respond_to do |format|
+          format.turbo_stream do
+            streams = affected_windows.map do |window|
+              turbo_stream.replace(
+                "#{window}_list_container",
+                partial: "todos/priority_window_container",
+                locals: {
+                  window: window.to_sym,
+                  todos: user.todos.active.where(priority_window: window)
+                }
+              )
+            end
+            render turbo_stream: streams
+          end
+          format.json { render json: { moved: todo_ids.size, priority_window: priority_window }, status: :ok }
+        end
+      rescue ActiveRecord::RecordNotFound => e
+        render json: { error: "One or more todos not found" }, status: :not_found
+      rescue ArgumentError => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      rescue StandardError => e
+        Rails.logger.error("Bulk move error: #{e.class} - #{e.message}\n#{e.backtrace.first(10).join("\n")}")
+        render json: { error: "Failed to move todos. Please try again." }, status: :internal_server_error
+      end
+    end
+
     private
 
     def check_rate_limit

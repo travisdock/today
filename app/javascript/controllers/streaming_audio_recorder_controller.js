@@ -252,31 +252,27 @@ export default class extends Controller {
     try {
       const { todo_ids, priority_window } = args
 
-      // Move each todo sequentially to ensure proper Turbo Stream handling
-      for (const todoId of todo_ids) {
-        const response = await fetch(`/todos/${todoId}/move`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': this.csrfToken,
-            'Accept': 'text/vnd.turbo-stream.html'
-          },
-          body: JSON.stringify({
-            priority_window: priority_window
-          })
+      const response = await fetch('/api/todos/bulk_move', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.csrfToken,
+          'Accept': 'text/vnd.turbo-stream.html'
+        },
+        body: JSON.stringify({
+          todo_ids: todo_ids,
+          priority_window: priority_window
         })
+      })
 
-        if (!response.ok) {
-          console.error(`Failed to move todo ${todoId}: ${response.status}`)
-          continue
-        }
+      if (!response.ok) {
+        throw new Error(`Bulk move failed: ${response.status}`)
+      }
 
-        // Get the Turbo Stream response and process it
-        const turboStream = await response.text()
+      const turboStream = await response.text()
 
-        if (turboStream && window.Turbo) {
-          window.Turbo.renderStreamMessage(turboStream)
-        }
+      if (turboStream && window.Turbo) {
+        window.Turbo.renderStreamMessage(turboStream)
       }
 
       console.log(`${todo_ids.length} todos moved to ${priority_window} successfully`)

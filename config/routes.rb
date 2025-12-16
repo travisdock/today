@@ -17,7 +17,11 @@ Rails.application.routes.draw do
     namespace :gemini do
       post "token", to: "tokens#create"
     end
-    resources :todos, only: :create
+    resources :todos, only: :create do
+      collection do
+        patch :bulk_move
+      end
+    end
   end
 
   root "sessions#new"
