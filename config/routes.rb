@@ -11,6 +11,19 @@ Rails.application.routes.draw do
     end
   end
   resources :agents, only: :create
+
+  # Streaming voice command API endpoints
+  namespace :api do
+    namespace :gemini do
+      post "token", to: "tokens#create"
+    end
+    resources :todos, only: :create do
+      collection do
+        patch :bulk_move
+      end
+    end
+  end
+
   root "sessions#new"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
