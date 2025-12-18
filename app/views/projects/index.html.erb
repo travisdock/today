@@ -1,0 +1,22 @@
+<% content_for :main_class, "flex flex-1 justify-center px-4 py-5 sm:px-6 lg:px-8" %>
+
+<div class="w-full max-w-3xl space-y-8 pb-32">
+  <%= render "shared/flash" %>
+
+  <% if @projects.any? %>
+    <section class="space-y-4">
+      <% @projects.each do |project| %>
+        <div class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
+          <h2 class="text-lg font-semibold text-slate-900"><%= project.name %></h2>
+          <% if project.description.present? %>
+            <p class="mt-2 text-slate-600"><%= project.description %></p>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+  <% else %>
+    <section class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur text-center">
+      <p class="text-slate-600">No projects yet.</p>
+    </section>
+  <% end %>
+</div>
