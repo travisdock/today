@@ -17,15 +17,20 @@
     <section class="space-y-4">
       <% @projects.each do |project| %>
         <div class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
-          <div class="flex items-start justify-between">
-            <div>
+          <div class="flex items-start gap-4">
+            <div class="w-28 h-28 rounded-full overflow-hidden flex-shrink-0 <%= 'bg-slate-200' unless project.badge.attached? %>">
+              <% if project.badge.attached? %>
+                <%= image_tag project.badge, class: "w-full h-full object-cover scale-110" %>
+              <% end %>
+            </div>
+            <div class="flex-1 min-w-0">
               <h2 class="text-lg font-semibold text-slate-900"><%= project.name %></h2>
               <% if project.description.present? %>
-                <p class="mt-2 text-slate-600"><%= project.description %></p>
+                <p class="mt-1 text-slate-600 truncate"><%= project.description %></p>
               <% end %>
             </div>
             <%= link_to edit_project_path(project),
-                  class: "text-slate-400 hover:text-slate-600 transition" do %>
+                  class: "text-slate-400 hover:text-slate-600 transition flex-shrink-0" do %>
               <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
               </svg>
