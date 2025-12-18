@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || (controller_name == 'projects' ? "Tomorrow" : "Today") %></title>
+    <title><%= page_title %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Today">
@@ -22,28 +22,17 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <%
-    is_projects_page = controller_name == 'projects'
-    if is_projects_page
-      gradient = "bg-[linear-gradient(180deg,#1a1a2e_0%,#4a1942_35%,#c24d2c_70%,#f9a03f_100%)]"
-    else
-      gradient = "bg-[linear-gradient(180deg,#4d8bff_0%,#7bb3ff_35%,#ffe5c2_70%,#ffad82_100%)]"
-    end
-  %>
-  <body class="m-0 flex min-h-screen flex-col <%= gradient %> bg-fixed font-sans text-slate-900">
+  <body class="m-0 flex min-h-screen flex-col <%= page_gradient_class %> bg-fixed font-sans text-slate-900">
     <nav class="flex items-center justify-between px-4 py-4 text-slate-50 sm:px-6 lg:px-8" style="padding-top: max(1rem, env(safe-area-inset-top)); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right))">
       <div class="flex items-center">
         <% if authenticated? %>
-          <% if is_projects_page %>
-            <%= link_to "Tomorrow", todos_path,
-                  class: "inline-flex items-center py-2 text-2xl font-semibold tracking-tight transition hover:underline" %>
+          <% if controller_name == "projects" %>
+            <%= link_to "Tomorrow", todos_path, class: nav_link_classes %>
           <% else %>
-            <%= link_to "Today", projects_path,
-                  class: "inline-flex items-center py-2 text-2xl font-semibold tracking-tight transition hover:underline" %>
+            <%= link_to "Today", projects_path, class: nav_link_classes %>
           <% end %>
         <% else %>
-          <%= link_to "Today", root_path,
-                class: "inline-flex items-center py-2 text-2xl font-semibold tracking-tight transition hover:underline" %>
+          <%= link_to "Today", root_path, class: nav_link_classes %>
         <% end %>
       </div>
       <div class="space-x-3">

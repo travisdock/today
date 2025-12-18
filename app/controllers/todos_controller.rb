@@ -187,10 +187,6 @@ class TodosController < ApplicationController
   end
 
   private
-    def current_user
-      Current.user
-    end
-
     def set_todo
       @todo = current_user.todos.find(params[:id])
     end

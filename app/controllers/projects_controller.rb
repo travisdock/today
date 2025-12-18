@@ -31,10 +31,6 @@ class ProjectsController < ApplicationController
   end
 
   private
-    def current_user
-      Current.user
-    end
-
     def set_project
       @project = current_user.projects.find(params[:id])
     end
