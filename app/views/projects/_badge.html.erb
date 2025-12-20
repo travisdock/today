@@ -1,0 +1,28 @@
+<%# locals: (project:, size: :medium) %>
+<%
+  size_classes = case size
+  when :small then "w-28 h-28"
+  when :medium then "w-32 h-32"
+  else "w-28 h-28"
+  end
+
+  recently_requested = project.badge_generated_at.present? && project.badge_generated_at > 60.seconds.ago
+
+  if project.badge.attached?
+    # Show spinner if regeneration was requested after current badge was created
+    generating = recently_requested && project.badge_generated_at > project.badge.blob.created_at
+  else
+    # No badge yet - show spinner if generation was recently requested
+    generating = recently_requested
+  end
+%>
+
+<div id="<%= dom_id(project, :badge) %>" class="<%= size_classes %> rounded-full overflow-hidden flex-shrink-0 bg-slate-200">
+  <% if generating %>
+    <div class="w-full h-full flex items-center justify-center">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  <% elsif project.badge.attached? %>
+    <%= image_tag project.badge, class: "w-full h-full object-cover scale-110" %>
+  <% end %>
+</div>

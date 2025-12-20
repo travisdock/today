@@ -16,13 +16,10 @@
   <% if @projects.any? %>
     <section class="space-y-4">
       <% @projects.each do |project| %>
+        <%= turbo_stream_from project %>
         <div class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
           <div class="flex items-start gap-4">
-            <div class="w-28 h-28 rounded-full overflow-hidden flex-shrink-0 <%= 'bg-slate-200' unless project.badge.attached? %>">
-              <% if project.badge.attached? %>
-                <%= image_tag project.badge, class: "w-full h-full object-cover scale-110" %>
-              <% end %>
-            </div>
+            <%= render "projects/badge", project: project, size: :small %>
             <div class="flex-1 min-w-0">
               <h2 class="text-lg font-semibold text-slate-900"><%= project.name %></h2>
               <% if project.description.present? %>

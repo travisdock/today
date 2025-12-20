@@ -2,7 +2,7 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: %i[edit update generate_badge]
 
   def index
-    @projects = current_user.projects.active.ordered
+    @projects = current_user.projects.active.ordered.with_attached_badge
   end
 
   def new
@@ -13,19 +13,30 @@ class ProjectsController < ApplicationController
     @project = current_user.projects.build(project_params)
 
     if @project.save
-      BadgeGeneratorService.new(@project).generate!
-      redirect_to projects_path, notice: "Project created."
+      @project.touch(:badge_generated_at)
+      BadgeGeneratorJob.perform_later(@project.id)
+      redirect_to projects_path, notice: "Project created. Badge is being generated..."
     else
       render :new, status: :unprocessable_entity
     end
   end
 
   def generate_badge
-    BadgeGeneratorService.new(@project).generate!
-    redirect_to edit_project_path(@project), notice: "Badge regenerated!"
-  rescue => e
-    Rails.logger.error("Badge generation failed: #{e.message}")
-    redirect_to edit_project_path(@project), alert: "Failed to generate badge."
+    if rate_limited?
+      flash.now[:alert] = "Please wait a few minutes before regenerating."
+      render turbo_stream: turbo_stream.update("flash", partial: "shared/flash")
+      return
+    end
+
+    @project.touch(:badge_generated_at)
+    BadgeGeneratorJob.perform_later(@project.id)
+
+    @project.reload
+    render turbo_stream: turbo_stream.replace(
+      ActionView::RecordIdentifier.dom_id(@project, :badge),
+      partial: "projects/badge",
+      locals: { project: @project }
+    )
   end
 
   def edit
@@ -40,11 +51,16 @@ class ProjectsController < ApplicationController
   end
 
   private
-    def set_project
-      @project = current_user.projects.find(params[:id])
-    end
 
-    def project_params
-      params.require(:project).permit(:name, :description)
-    end
+  def set_project
+    @project = current_user.projects.find(params[:id])
+  end
+
+  def project_params
+    params.require(:project).permit(:name, :description)
+  end
+
+  def rate_limited?
+    @project.badge_generated_at.present? && @project.badge_generated_at > 2.minutes.ago
+  end
 end
