@@ -11,7 +11,7 @@ Rails.application.routes.draw do
     end
   end
   resources :projects, only: %i[index new create edit update] do
-    resource :badge, only: [:create], controller: "project_badges"
+    resource :badge, only: [ :create ], controller: "project_badges"
   end
   resources :agents, only: :create
 

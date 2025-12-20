@@ -75,12 +75,12 @@ class BadgeGeneratorService
 
   def request_body
     {
-      contents: [{
+      contents: [ {
         parts: [
           { text: build_prompt },
           { inlineData: { mimeType: "image/jpeg", data: TEMPLATE_BASE64 } }
         ]
-      }],
+      } ],
       generationConfig: {
         responseModalities: %w[TEXT IMAGE]
       }
@@ -90,7 +90,7 @@ class BadgeGeneratorService
   def build_prompt
     sanitized_name = sanitize_for_prompt(@project.name)
 
-    parts = ["Add an embroidered icon to this merit badge for \"#{sanitized_name}\"."]
+    parts = [ "Add an embroidered icon to this merit badge for \"#{sanitized_name}\"." ]
     if @project.description.present?
       sanitized_desc = sanitize_for_prompt(@project.description)
       parts << "Theme: #{sanitized_desc}."
