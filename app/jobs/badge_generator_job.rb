@@ -7,6 +7,16 @@ class BadgeGeneratorJob < ApplicationJob
 
   discard_on ActiveRecord::RecordNotFound
 
+  # Only runs after ALL retries exhausted - handles final failure state
+  after_discard do |job, exception|
+    project = Project.find_by(id: job.arguments.first)
+    if project
+      # Reset timestamp so old badge shows on page refresh and user can retry
+      project.update_column(:badge_generated_at, nil)
+      broadcast_badge_update(project, failed: true)
+    end
+  end
+
   def perform(project_id)
     project = Project.find(project_id)
     BadgeGeneratorService.new(project).generate!
@@ -15,14 +25,14 @@ class BadgeGeneratorJob < ApplicationJob
 
   private
 
-  def broadcast_badge_update(project)
-    fresh_project = Project.includes(badge_attachment: :blob).find(project.id)
+  def broadcast_badge_update(project, failed: false)
+    project.reload
 
     Turbo::StreamsChannel.broadcast_replace_to(
-      fresh_project,
-      target: ActionView::RecordIdentifier.dom_id(fresh_project, :badge),
+      project,
+      target: ActionView::RecordIdentifier.dom_id(project, :badge),
       partial: "projects/badge",
-      locals: { project: fresh_project }
+      locals: { project: project, generation_failed: failed }
     )
   end
 end

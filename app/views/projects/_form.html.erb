@@ -40,7 +40,7 @@
     <div class="flex items-center gap-4">
       <%= render "projects/badge", project: project, size: :medium %>
       <%= button_to "Regenerate Badge",
-            generate_badge_project_path(project),
+            project_badge_path(project),
             method: :post,
             class: "text-sm text-blue-600 hover:text-blue-800 transition" %>
     </div>
