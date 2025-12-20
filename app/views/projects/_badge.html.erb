@@ -1,0 +1,37 @@
+<%# locals: (project:, size: :medium, generation_failed: false) %>
+<%
+  size_classes = case size
+  when :small then "w-28 h-28"
+  when :medium then "w-32 h-32"
+  else "w-28 h-28"
+  end
+
+  recently_requested = project.badge_generated_at.present? && project.badge_generated_at > 60.seconds.ago
+
+  if project.badge.attached?
+    # Show spinner if regeneration was requested after current badge was created
+    generating = recently_requested && project.badge_generated_at > project.badge.blob.created_at
+  else
+    # No badge yet - show spinner if generation was recently requested
+    generating = recently_requested
+  end
+
+  # Don't show spinner if generation failed
+  generating = false if generation_failed
+%>
+
+<div id="<%= dom_id(project, :badge) %>" class="<%= size_classes %> rounded-full overflow-hidden flex-shrink-0 bg-slate-200">
+  <% if generation_failed %>
+    <div class="w-full h-full flex items-center justify-center bg-red-50">
+      <svg class="h-8 w-8 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+      </svg>
+    </div>
+  <% elsif generating %>
+    <div class="w-full h-full flex items-center justify-center">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  <% elsif project.badge.attached? %>
+    <%= image_tag project.badge, class: "w-full h-full object-cover scale-110" %>
+  <% end %>
+</div>

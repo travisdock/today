@@ -2,7 +2,7 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: %i[edit update]
 
   def index
-    @projects = current_user.projects.active.ordered
+    @projects = current_user.projects.active.ordered.with_attached_badge
   end
 
   def new
@@ -13,7 +13,9 @@ class ProjectsController < ApplicationController
     @project = current_user.projects.build(project_params)
 
     if @project.save
-      redirect_to projects_path, notice: "Project created."
+      @project.touch(:badge_generated_at)
+      BadgeGeneratorJob.perform_later(@project.id)
+      redirect_to projects_path, notice: "Project created. Badge is being generated..."
     else
       render :new, status: :unprocessable_entity
     end
@@ -31,11 +33,12 @@ class ProjectsController < ApplicationController
   end
 
   private
-    def set_project
-      @project = current_user.projects.find(params[:id])
-    end
 
-    def project_params
-      params.require(:project).permit(:name, :description)
-    end
+  def set_project
+    @project = current_user.projects.find(params[:id])
+  end
+
+  def project_params
+    params.require(:project).permit(:name, :description)
+  end
 end

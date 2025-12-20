@@ -10,7 +10,9 @@ Rails.application.routes.draw do
       patch :move
     end
   end
-  resources :projects, only: %i[index new create edit update]
+  resources :projects, only: %i[index new create edit update] do
+    resource :badge, only: [ :create ], controller: "project_badges"
+  end
   resources :agents, only: :create
 
   # Streaming voice command API endpoints
