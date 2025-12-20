@@ -1,4 +1,8 @@
 module ApplicationHelper
+  def page_theme_color
+    controller_name == "projects" ? "#1a1a2e" : "#4d8bff"
+  end
+
   def page_gradient_class
     if controller_name == "projects"
       "bg-[linear-gradient(180deg,#1a1a2e_0%,#4a1942_35%,#c24d2c_70%,#f9a03f_100%)]"
