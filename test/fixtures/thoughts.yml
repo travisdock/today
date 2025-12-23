@@ -1,0 +1,11 @@
+one:
+  project: one
+  content: First thought on my project
+
+two:
+  project: one
+  content: Second thought on my project
+
+other_user:
+  project: other_user
+  content: A thought on someone else's project
