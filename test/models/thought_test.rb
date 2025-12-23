@@ -13,14 +13,14 @@ class ThoughtTest < ActiveSupport::TestCase
     assert_includes thought.errors[:project], "must exist"
   end
 
-  test "rejects content over 5000 characters" do
-    thought = Thought.new(project: projects(:one), content: "a" * 5001)
+  test "rejects content over 30000 characters" do
+    thought = Thought.new(project: projects(:one), content: "a" * 30_001)
     assert_not thought.valid?
-    assert_includes thought.errors[:content], "is too long (maximum is 5000 characters)"
+    assert_includes thought.errors[:content], "is too long (maximum is 30000 characters)"
   end
 
-  test "accepts content at 5000 characters" do
-    thought = Thought.new(project: projects(:one), content: "a" * 5000)
+  test "accepts content at 30000 characters" do
+    thought = Thought.new(project: projects(:one), content: "a" * 30_000)
     assert thought.valid?
   end
 
