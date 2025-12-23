@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_20_000001) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_23_133412) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -46,6 +46,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_20_000001) do
     t.text "description"
     t.string "name", null: false
     t.integer "position", default: 0
+    t.integer "thoughts_count", default: 0, null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["user_id", "archived_at", "created_at"], name: "index_projects_on_user_active_created"
@@ -59,6 +60,15 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_20_000001) do
     t.string "user_agent"
     t.integer "user_id", null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "thoughts", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.integer "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "created_at"], name: "index_thoughts_on_project_id_and_created_at", order: { created_at: :desc }
+    t.index ["project_id"], name: "index_thoughts_on_project_id"
   end
 
   create_table "todos", force: :cascade do |t|
@@ -89,5 +99,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_20_000001) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "projects", "users"
   add_foreign_key "sessions", "users"
+  add_foreign_key "thoughts", "projects", on_delete: :cascade
   add_foreign_key "todos", "users", on_delete: :cascade
 end

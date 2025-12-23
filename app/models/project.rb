@@ -1,6 +1,9 @@
 class Project < ApplicationRecord
   belongs_to :user
   has_one_attached :badge, dependent: :purge_later
+  has_many :thoughts, dependent: :destroy
+
+  accepts_nested_attributes_for :thoughts, reject_if: :all_blank
 
   validates :name, presence: true, length: { maximum: 255 }
   validates :description, length: { maximum: 5000 }, allow_blank: true

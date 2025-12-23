@@ -10,8 +10,9 @@ Rails.application.routes.draw do
       patch :move
     end
   end
-  resources :projects, only: %i[index new create edit update] do
+  resources :projects, only: %i[index new create edit update show] do
     resource :badge, only: [ :create ], controller: "project_badges"
+    resources :thoughts, only: [ :create ], controller: "project_thoughts"
   end
   resources :agents, only: :create
 

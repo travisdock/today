@@ -1,8 +1,13 @@
 class ProjectsController < ApplicationController
-  before_action :set_project, only: %i[edit update]
+  before_action :set_project, only: %i[show edit update]
 
   def index
     @projects = current_user.projects.active.ordered.with_attached_badge
+  end
+
+  def show
+    @thoughts = @project.thoughts.last_two
+    @thought = @project.thoughts.build
   end
 
   def new
