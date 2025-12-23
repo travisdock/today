@@ -1,0 +1,9 @@
+<div id="thoughts_list" class="mt-4 space-y-3">
+  <% if thoughts.any? %>
+    <% thoughts.each do |thought| %>
+      <%= render "projects/thoughts/thought", thought: thought %>
+    <% end %>
+  <% else %>
+    <p class="text-slate-500 text-sm italic">No thoughts yet. Add your first one above!</p>
+  <% end %>
+</div>
