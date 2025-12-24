@@ -40,6 +40,6 @@ class ProjectThoughtsController < ApplicationController
   end
 
   def thought_params
-    params.require(:thought).permit(:content)
+    params.require(:thought).permit(:content, :image)
   end
 end
