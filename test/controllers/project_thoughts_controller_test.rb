@@ -21,13 +21,36 @@ class ProjectThoughtsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to project_url(@project)
   end
 
-  test "does not create thought with blank content" do
+  test "does not create thought without content or image" do
     assert_no_difference -> { @project.thoughts.count } do
       post project_thoughts_url(@project), params: { thought: { content: "" } }
     end
 
     assert_redirected_to project_url(@project)
     assert_equal "Could not add thought.", flash[:alert]
+  end
+
+  test "creates thought with image only" do
+    image = fixture_file_upload("test_image.jpg", "image/jpeg")
+
+    assert_difference -> { @project.thoughts.count }, 1 do
+      post project_thoughts_url(@project), params: { thought: { content: "", image: image } }
+    end
+
+    assert_redirected_to project_url(@project)
+    assert @project.thoughts.last.image.attached?
+  end
+
+  test "creates thought with both content and image" do
+    image = fixture_file_upload("test_image.jpg", "image/jpeg")
+
+    assert_difference -> { @project.thoughts.count }, 1 do
+      post project_thoughts_url(@project), params: { thought: { content: "With image", image: image } }
+    end
+
+    thought = @project.thoughts.last
+    assert_equal "With image", thought.content
+    assert thought.image.attached?
   end
 
   test "prevents creating thoughts on other users projects" do
