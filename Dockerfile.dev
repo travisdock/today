@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
       && rm -rf /var/lib/apt/lists/*
 
 RUN bash -c "set -o pipefail && apt-get update \
-  && apt-get install -y --no-install-recommends build-essential curl git libpq-dev libyaml-dev vim\
+  && apt-get install -y --no-install-recommends build-essential curl git libpq-dev libyaml-dev libvips vim\
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
   && apt-get clean \
   && groupadd -g \"${GID}\" ruby \

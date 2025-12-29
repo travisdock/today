@@ -1,10 +1,35 @@
 require "test_helper"
 
 class ThoughtTest < ActiveSupport::TestCase
-  test "requires content" do
+  test "requires content or image" do
     thought = Thought.new(project: projects(:one), content: "")
     assert_not thought.valid?
-    assert_includes thought.errors[:content], "can't be blank"
+    assert_includes thought.errors[:base], "Must have content or an image"
+  end
+
+  test "valid with content only" do
+    thought = Thought.new(project: projects(:one), content: "Some thought")
+    assert thought.valid?
+  end
+
+  test "valid with image only" do
+    thought = Thought.new(project: projects(:one), content: "")
+    thought.image.attach(
+      io: File.open(file_fixture("test_image.jpg")),
+      filename: "test.jpg",
+      content_type: "image/jpeg"
+    )
+    assert thought.valid?
+  end
+
+  test "valid with both content and image" do
+    thought = Thought.new(project: projects(:one), content: "Some thought")
+    thought.image.attach(
+      io: File.open(file_fixture("test_image.jpg")),
+      filename: "test.jpg",
+      content_type: "image/jpeg"
+    )
+    assert thought.valid?
   end
 
   test "requires project" do
@@ -21,6 +46,51 @@ class ThoughtTest < ActiveSupport::TestCase
 
   test "accepts content at 30000 characters" do
     thought = Thought.new(project: projects(:one), content: "a" * 30_000)
+    assert thought.valid?
+  end
+
+  test "rejects image over 5MB" do
+    thought = Thought.new(project: projects(:one), content: "")
+    thought.image.attach(
+      io: StringIO.new("x" * 6.megabytes),
+      filename: "large.jpg",
+      content_type: "image/jpeg"
+    )
+
+    assert_not thought.valid?
+    assert_includes thought.errors[:image], "must be less than 5MB"
+  end
+
+  test "accepts image at 5MB" do
+    thought = Thought.new(project: projects(:one), content: "")
+    thought.image.attach(
+      io: StringIO.new("x" * 5.megabytes),
+      filename: "ok.jpg",
+      content_type: "image/jpeg"
+    )
+
+    assert thought.valid?
+  end
+
+  test "rejects HEIC images" do
+    thought = Thought.new(project: projects(:one), content: "")
+    thought.image.attach(
+      io: StringIO.new("fake heic data"),
+      filename: "photo.heic",
+      content_type: "image/heic"
+    )
+
+    assert_not thought.valid?
+    assert_includes thought.errors[:image], "must be JPEG, PNG, GIF, or WEBP"
+  end
+
+  test "accepts JPEG, PNG, GIF, and WebP images" do
+    thought = Thought.new(project: projects(:one), content: "")
+    thought.image.attach(
+      io: File.open(file_fixture("test_image.jpg")),
+      filename: "test.jpg",
+      content_type: "image/jpeg"
+    )
     assert thought.valid?
   end
 
