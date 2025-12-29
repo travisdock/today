@@ -9,7 +9,7 @@ class ProjectThoughtsController < ApplicationController
         flash.now[:notice] = "Thought added."
         format.turbo_stream do
           fresh_form = @project.thoughts.build
-          thoughts = @project.thoughts.last_two
+          thoughts = @project.thoughts.last_two.with_attached_image
 
           render turbo_stream: [
             turbo_stream.replace("flash", partial: "shared/flash"),

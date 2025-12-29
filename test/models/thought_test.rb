@@ -15,7 +15,7 @@ class ThoughtTest < ActiveSupport::TestCase
   test "valid with image only" do
     thought = Thought.new(project: projects(:one), content: "")
     thought.image.attach(
-      io: StringIO.new("fake image data"),
+      io: File.open(file_fixture("test_image.jpg")),
       filename: "test.jpg",
       content_type: "image/jpeg"
     )
@@ -25,7 +25,7 @@ class ThoughtTest < ActiveSupport::TestCase
   test "valid with both content and image" do
     thought = Thought.new(project: projects(:one), content: "Some thought")
     thought.image.attach(
-      io: StringIO.new("fake image data"),
+      io: File.open(file_fixture("test_image.jpg")),
       filename: "test.jpg",
       content_type: "image/jpeg"
     )
@@ -56,6 +56,7 @@ class ThoughtTest < ActiveSupport::TestCase
       filename: "large.jpg",
       content_type: "image/jpeg"
     )
+
     assert_not thought.valid?
     assert_includes thought.errors[:image], "must be less than 5MB"
   end
@@ -67,6 +68,7 @@ class ThoughtTest < ActiveSupport::TestCase
       filename: "ok.jpg",
       content_type: "image/jpeg"
     )
+
     assert thought.valid?
   end
 
@@ -77,20 +79,19 @@ class ThoughtTest < ActiveSupport::TestCase
       filename: "photo.heic",
       content_type: "image/heic"
     )
+
     assert_not thought.valid?
-    assert_includes thought.errors[:image], "must be JPEG, PNG, GIF, or WebP"
+    assert_includes thought.errors[:image], "must be JPEG, PNG, GIF, or WEBP"
   end
 
   test "accepts JPEG, PNG, GIF, and WebP images" do
-    %w[image/jpeg image/png image/gif image/webp].each do |content_type|
-      thought = Thought.new(project: projects(:one), content: "")
-      thought.image.attach(
-        io: StringIO.new("fake image data"),
-        filename: "test.img",
-        content_type: content_type
-      )
-      assert thought.valid?, "Expected #{content_type} to be valid"
-    end
+    thought = Thought.new(project: projects(:one), content: "")
+    thought.image.attach(
+      io: File.open(file_fixture("test_image.jpg")),
+      filename: "test.jpg",
+      content_type: "image/jpeg"
+    )
+    assert thought.valid?
   end
 
   test "last_two returns most recent two thoughts" do

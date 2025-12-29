@@ -6,7 +6,7 @@ class ProjectsController < ApplicationController
   end
 
   def show
-    @thoughts = @project.thoughts.last_two
+    @thoughts = @project.thoughts.last_two.with_attached_image
     @thought = @project.thoughts.build
   end
 
