@@ -2,13 +2,16 @@ one:
   user: one
   name: My Project
   description: A test project
+  section: this_month
 
 two:
   user: one
   name: Another Project
   description: Another test project
+  section: next_year
 
 other_user:
   user: two
   name: Their Project
   description: Belongs to user two
+  section: this_year

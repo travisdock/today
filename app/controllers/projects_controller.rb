@@ -2,7 +2,7 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: %i[show edit update]
 
   def index
-    @projects = current_user.projects.active.ordered.with_attached_badge
+    @projects_grouped = current_user.projects.active.ordered.group_by(&:section)
   end
 
   def show
@@ -44,6 +44,6 @@ class ProjectsController < ApplicationController
   end
 
   def project_params
-    params.require(:project).permit(:name, :description)
+    params.require(:project).permit(:name, :description, :section)
   end
 end

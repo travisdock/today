@@ -1,6 +1,6 @@
 <% content_for :main_class, "flex flex-1 justify-center px-4 py-5 sm:px-6 lg:px-8" %>
 
-<div class="w-full max-w-3xl space-y-8 pb-32">
+<div class="w-full max-w-4xl space-y-6 pb-32">
   <%= render "shared/flash" %>
 
   <section class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur">
@@ -13,37 +13,5 @@
     <% end %>
   </section>
 
-  <% if @projects.any? %>
-    <section class="space-y-4">
-      <% @projects.each do |project| %>
-        <%= turbo_stream_from project %>
-        <div class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
-          <div class="flex items-start gap-4">
-            <%= render "projects/badge", project: project, size: :small %>
-            <div class="flex-1 min-w-0">
-              <h2 class="text-lg font-semibold text-slate-900">
-                <%= link_to project.name, project_path(project), class: "hover:text-blue-600 transition" %>
-              </h2>
-              <% if project.description.present? %>
-                <p class="mt-1 text-slate-600 truncate"><%= project.description %></p>
-              <% end %>
-              <p class="mt-1 text-sm text-slate-400">
-                <%= project.thoughts_count %> <%= "thought".pluralize(project.thoughts_count) %>
-              </p>
-            </div>
-            <%= link_to edit_project_path(project),
-                  class: "text-slate-400 hover:text-slate-600 transition flex-shrink-0" do %>
-              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
-              </svg>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </section>
-  <% else %>
-    <section class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur text-center">
-      <p class="text-slate-600">No projects yet.</p>
-    </section>
-  <% end %>
+  <%= render "projects/lists", projects_grouped: @projects_grouped %>
 </div>

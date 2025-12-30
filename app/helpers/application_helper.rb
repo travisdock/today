@@ -15,7 +15,12 @@ module ApplicationHelper
     content_for(:title) || (controller_name == "projects" ? "Tomorrow" : "Today")
   end
 
-  def nav_link_classes
-    "inline-flex items-center py-2 text-2xl font-semibold tracking-tight transition hover:underline"
+  def nav_item_classes(active:)
+    base = "text-base font-medium transition"
+    if active
+      "#{base} text-white underline underline-offset-4"
+    else
+      "#{base} text-white/70 hover:text-white"
+    end
   end
 end
