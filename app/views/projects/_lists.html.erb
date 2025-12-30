@@ -1,0 +1,9 @@
+<div id="project_lists" class="space-y-6">
+  <% Project::SECTIONS.each do |section| %>
+    <% projects = projects_grouped[section.to_s] || [] %>
+
+    <div id="<%= section %>_list_container">
+      <%= render "projects/section", section: section, projects: projects %>
+    </div>
+  <% end %>
+</div>
