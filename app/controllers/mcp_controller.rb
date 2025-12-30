@@ -35,11 +35,6 @@ class McpController < ApplicationController
 
     token = extract_bearer_token
 
-    # Debug logging
-    Rails.logger.info "[MCP Auth] Authorization header present: #{request.headers['Authorization'].present?}"
-    Rails.logger.info "[MCP Auth] Token extracted: #{token.present?}"
-    Rails.logger.info "[MCP Auth] Token preview: #{token&.first(50)}..." if token.present?
-
     unless token
       render_unauthorized("Missing authorization token")
       return
@@ -47,21 +42,15 @@ class McpController < ApplicationController
 
     validator = Auth0TokenValidator.new(token)
     unless validator.valid?
-      Rails.logger.info "[MCP Auth] Token validation failed: #{validator.error}"
       render_unauthorized(validator.error || "Invalid token")
       return
     end
 
-    Rails.logger.info "[MCP Auth] Token valid, looking up user..."
-
     @mcp_user = validator.user
     unless @mcp_user
-      Rails.logger.info "[MCP Auth] User not found for token"
       render_unauthorized("User not found. Please use the same email as your Today app account.")
       return
     end
-
-    Rails.logger.info "[MCP Auth] User found: #{@mcp_user.email_address}"
   end
 
   def extract_bearer_token

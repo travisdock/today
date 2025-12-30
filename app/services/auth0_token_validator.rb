@@ -57,7 +57,6 @@ class Auth0TokenValidator
     case response
     when Net::HTTPSuccess
       @userinfo = JSON.parse(response.body)
-      Rails.logger.info "[Auth0] Token validated via userinfo, email: #{@userinfo['email']}"
     when Net::HTTPUnauthorized
       @error = "Invalid or expired token"
     else
