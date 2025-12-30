@@ -1,0 +1,9 @@
+<div id="journal_entries_list" class="mt-4 space-y-3">
+  <% if journal_entries.any? %>
+    <% journal_entries.each do |journal_entry| %>
+      <%= render "projects/journal_entries/journal_entry", journal_entry: journal_entry %>
+    <% end %>
+  <% else %>
+    <p class="text-slate-500 text-sm italic">No journal entries yet. Add your first one above!</p>
+  <% end %>
+</div>

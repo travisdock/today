@@ -10,6 +10,8 @@ class ProjectsController < ApplicationController
     @thought = @project.thoughts.build
     @resources = @project.resources.last_two
     @resource = @project.resources.build
+    @journal_entries = @project.journal_entries.last_two.with_attached_image
+    @journal_entry = @project.journal_entries.build
   end
 
   def new

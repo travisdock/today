@@ -14,6 +14,7 @@ Rails.application.routes.draw do
     resource :badge, only: [ :create ], controller: "project_badges"
     resources :thoughts, only: [ :create ], controller: "project_thoughts"
     resources :resources, only: [ :create ], controller: "project_resources"
+    resources :journal_entries, only: [ :create ], controller: "project_journal_entries"
   end
   resources :agents, only: :create
 
