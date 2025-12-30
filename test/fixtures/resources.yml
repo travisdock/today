@@ -1,0 +1,17 @@
+one:
+  project: one
+  url: https://example.com/fence-video
+  content: Great video about fence building
+
+two:
+  project: one
+  content: Remember to check the lumber prices at Home Depot
+
+url_only:
+  project: one
+  url: https://youtube.com/watch?v=abc123
+
+other_user:
+  project: other_user
+  url: https://example.com/other
+  content: Someone else's resource

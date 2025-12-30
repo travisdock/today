@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   resources :projects, only: %i[index new create edit update show] do
     resource :badge, only: [ :create ], controller: "project_badges"
     resources :thoughts, only: [ :create ], controller: "project_thoughts"
+    resources :resources, only: [ :create ], controller: "project_resources"
   end
   resources :agents, only: :create
 
