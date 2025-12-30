@@ -8,6 +8,8 @@ class ProjectsController < ApplicationController
   def show
     @thoughts = @project.thoughts.last_two.with_attached_image
     @thought = @project.thoughts.build
+    @resources = @project.resources.last_two
+    @resource = @project.resources.build
   end
 
   def new
