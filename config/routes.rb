@@ -30,6 +30,10 @@ Rails.application.routes.draw do
     end
   end
 
+  # MCP (Model Context Protocol) server for ChatGPT integration
+  post "/mcp", to: "mcp#handle"
+  get "/.well-known/oauth-protected-resource", to: "well_known#oauth_protected_resource"
+
   root "sessions#new"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
