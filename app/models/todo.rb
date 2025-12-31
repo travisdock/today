@@ -1,5 +1,6 @@
 class Todo < ApplicationRecord
   belongs_to :user
+  belongs_to :milestone, optional: true, touch: true
 
   # Priority windows in display order
   PRIORITY_WINDOWS = [ :today, :tomorrow, :this_week, :next_week ].freeze
@@ -26,6 +27,7 @@ class Todo < ApplicationRecord
 
   validates :title, presence: true, length: { maximum: 255 }
   validates :priority_window, presence: true
+  validate :milestone_belongs_to_same_user, if: :milestone_id?
 
   # Updated scope to order by window priority, then position
   scope :active, -> {
@@ -45,6 +47,13 @@ class Todo < ApplicationRecord
   end
 
   private
+
+    def milestone_belongs_to_same_user
+      return if milestone&.project&.user_id == user_id
+
+      errors.add(:milestone, "must belong to one of your projects")
+    end
+
     # UPDATED: Position scoped by priority_window
     def assign_position
       return unless user

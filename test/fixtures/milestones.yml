@@ -1,0 +1,25 @@
+one:
+  project: one
+  name: Research Phase
+  description: Initial research and planning
+  position: 1
+  completed_at: null
+
+two:
+  project: one
+  name: Implementation Phase
+  description: Build the thing
+  position: 2
+  completed_at: null
+
+completed:
+  project: one
+  name: Completed Milestone
+  position: 3
+  completed_at: <%= 1.day.ago %>
+
+other_project:
+  project: other_user
+  name: Their Milestone
+  position: 1
+  completed_at: null

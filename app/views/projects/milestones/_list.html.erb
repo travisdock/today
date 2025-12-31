@@ -1,0 +1,14 @@
+<div id="milestones_list"
+     class="mt-4 space-y-2"
+     data-controller="milestone-sortable"
+     data-milestone-sortable-url-value="<%= reorder_project_milestones_path(project) %>"
+     data-milestone-sortable-handle-value=".milestone-drag-handle"
+     data-milestone-sortable-animation-value="150">
+  <% if milestones.any? %>
+    <% milestones.each do |milestone| %>
+      <%= render "projects/milestones/milestone", project: project, milestone: milestone %>
+    <% end %>
+  <% else %>
+    <p class="text-slate-500 text-sm italic">No milestones yet. Add your first one above!</p>
+  <% end %>
+</div>

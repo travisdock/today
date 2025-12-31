@@ -1,5 +1,5 @@
 class Resource < ApplicationRecord
-  belongs_to :project, counter_cache: true
+  belongs_to :project, counter_cache: true, touch: true
 
   validate :content_or_url_present
   validates :content, length: { maximum: 5000 }, allow_blank: true

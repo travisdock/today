@@ -51,4 +51,30 @@ class TodoTest < ActiveSupport::TestCase
 
     assert_equal [ todo_b, todo_a ], user.todos.active.to_a
   end
+
+  test "allows milestone from user's own project" do
+    user = users(:one)
+    project = user.projects.create!(name: "Test Project")
+    milestone = project.milestones.create!(name: "Test Milestone")
+
+    todo = user.todos.build(title: "Test", priority_window: "today", milestone: milestone)
+    assert todo.valid?
+  end
+
+  test "rejects milestone from another user's project" do
+    user_one = users(:one)
+    user_two = users(:two)
+    other_project = user_two.projects.create!(name: "Other Project")
+    other_milestone = other_project.milestones.create!(name: "Other Milestone")
+
+    todo = user_one.todos.build(title: "Test", priority_window: "today", milestone: other_milestone)
+    assert_not todo.valid?
+    assert_includes todo.errors[:milestone], "must belong to one of your projects"
+  end
+
+  test "allows todo without milestone" do
+    user = users(:one)
+    todo = user.todos.build(title: "Test", priority_window: "today", milestone: nil)
+    assert todo.valid?
+  end
 end

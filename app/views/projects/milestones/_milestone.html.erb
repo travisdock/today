@@ -1,0 +1,53 @@
+<%= tag.div id: dom_id(milestone), class: "rounded-xl bg-slate-50 p-4 group relative", data: { id: milestone.id } do %>
+  <div class="flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3 flex-1 min-w-0">
+      <%= button_to toggle_complete_project_milestone_path(project, milestone),
+            method: :patch,
+            class: "flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition #{milestone.completed? ? 'bg-green-500 border-green-500' : 'border-slate-300 hover:border-blue-500'}",
+            title: milestone.completed? ? "Mark as active" : "Mark as complete" do %>
+        <% if milestone.completed? %>
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        <% end %>
+      <% end %>
+
+      <%= link_to milestone.name, project_milestone_path(project, milestone),
+            class: "text-slate-700 font-medium truncate hover:text-blue-600 transition #{milestone.completed? ? 'line-through text-slate-400' : ''}" %>
+    </div>
+
+    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <% unless milestone.completed? %>
+        <span class="milestone-drag-handle cursor-grab p-1 text-slate-400 hover:text-slate-600 transition" aria-label="Drag to reorder">
+          <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <circle cx="7" cy="6" r=".9" />
+            <circle cx="13" cy="6" r=".9" />
+            <circle cx="7" cy="10" r=".9" />
+            <circle cx="13" cy="10" r=".9" />
+            <circle cx="7" cy="14" r=".9" />
+            <circle cx="13" cy="14" r=".9" />
+          </svg>
+        </span>
+      <% end %>
+      <%= button_to project_milestone_path(project, milestone),
+            method: :delete,
+            class: "text-red-500 hover:text-red-700 transition p-1",
+            data: { turbo_confirm: "Delete this milestone?" },
+            title: "Delete milestone" do %>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      <% end %>
+    </div>
+  </div>
+
+  <% if milestone.description.present? %>
+    <p class="mt-2 text-sm text-slate-600 pl-9"><%= milestone.description %></p>
+  <% end %>
+
+  <% if milestone.active_todos_count > 0 %>
+    <p class="mt-2 text-xs text-slate-400 pl-9">
+      <%= pluralize(milestone.active_todos_count, "active todo") %>
+    </p>
+  <% end %>
+<% end %>

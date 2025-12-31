@@ -55,7 +55,7 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     json = JSON.parse(response.body)
     tools = json.dig("result", "tools")
 
-    assert_equal 6, tools.length
+    assert_equal 7, tools.length
 
     tool_names = tools.map { |t| t["name"] }
     assert_includes tool_names, "list_projects"
@@ -63,6 +63,7 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     assert_includes tool_names, "list_thoughts"
     assert_includes tool_names, "list_resources"
     assert_includes tool_names, "list_journal_entries"
+    assert_includes tool_names, "list_milestones"
     assert_includes tool_names, "list_todos"
 
     # Check readOnlyHint annotations

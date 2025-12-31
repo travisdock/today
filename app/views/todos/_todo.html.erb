@@ -16,6 +16,15 @@
       </button>
       <div class="min-w-0">
         <p class="text-base font-medium text-slate-900"><%= todo.title %></p>
+        <% if todo.milestone && local_assigns.fetch(:show_milestone_label, true) %>
+          <%= link_to project_milestone_path(todo.milestone.project, todo.milestone),
+                class: "inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:text-blue-800 transition" do %>
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <%= todo.milestone.name %> for <%= todo.milestone.project.name %>
+          <% end %>
+        <% end %>
       </div>
     </div>
     <div class="flex w-full flex-col gap-2 pr-12 sm:w-auto sm:flex-row sm:items-center sm:gap-3 sm:justify-end sm:pr-12">
@@ -65,7 +74,16 @@
   <li id="<%= dom_id(todo) %>" data-id="<%= todo.id %>" class="flex flex-col gap-3 rounded-2xl border border-slate-200/60 bg-white px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
     <div class="sm:min-w-0">
       <p class="font-medium text-slate-800"><%= todo.title %></p>
-      <%= local_time(todo.completed_at, format: :weekdayWithTime) %>
+      <% if todo.milestone && local_assigns.fetch(:show_milestone_label, true) %>
+        <%= link_to project_milestone_path(todo.milestone.project, todo.milestone),
+              class: "inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition" do %>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <%= todo.milestone.name %> for <%= todo.milestone.project.name %>
+        <% end %>
+      <% end %>
+      <p class="text-slate-500"><%= local_time(todo.completed_at, format: :weekdayWithTime) %></p>
     </div>
     <div class="flex flex-wrap gap-2 sm:justify-end">
       <%= button_to(

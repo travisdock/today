@@ -1,7 +1,7 @@
 class Thought < ApplicationRecord
   include ImageAttachable
 
-  belongs_to :project, counter_cache: true
+  belongs_to :project, counter_cache: true, touch: true
   has_one_attached :image, dependent: :purge_later
 
   validate :content_or_image_present

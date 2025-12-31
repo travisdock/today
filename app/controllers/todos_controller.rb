@@ -3,8 +3,8 @@ class TodosController < ApplicationController
 
   def index
     @todo = current_user.todos.build(priority_window: :today)  # Default to today
-    @active_todos_grouped = current_user.todos.active.group_by(&:priority_window)
-    @completed_todos = current_user.todos.completed
+    @active_todos_grouped = current_user.todos.includes(milestone: :project).active.group_by(&:priority_window)
+    @completed_todos = current_user.todos.includes(milestone: :project).completed
   end
 
   def create

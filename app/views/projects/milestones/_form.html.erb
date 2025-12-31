@@ -1,0 +1,29 @@
+<div id="milestone_form">
+  <%= form_with model: [project, milestone], url: project_milestones_path(project), class: "space-y-3" do |form| %>
+    <div>
+      <%= form.text_field :name,
+            placeholder: "Add a milestone...",
+            class: "w-full rounded-2xl border border-slate-300/80 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-400/30" %>
+    </div>
+
+    <div>
+      <%= form.text_area :description,
+            rows: 2,
+            placeholder: "Optional description...",
+            class: "w-full rounded-2xl border border-slate-300/80 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-400/30 resize-none" %>
+    </div>
+
+    <% if milestone.errors.any? %>
+      <ul class="space-y-1 text-sm text-red-600">
+        <% milestone.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <div class="flex items-center justify-end">
+      <%= form.submit "Add Milestone",
+            class: "rounded-2xl bg-blue-600 px-5 py-2 text-sm font-semibold uppercase tracking-wide text-white shadow-md transition hover:-translate-y-0.5 hover:bg-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-400/40" %>
+    </div>
+  <% end %>
+</div>
