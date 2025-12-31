@@ -11,7 +11,7 @@ class McpController < ApplicationController
   skip_forgery_protection
 
   rate_limit to: 60, within: 1.minute, only: :handle,
-    by: -> { request.remote_ip },
+    by: -> { rate_limit_key },
     with: -> { render_rate_limited }
 
   before_action :authenticate_mcp_token!
@@ -62,6 +62,15 @@ class McpController < ApplicationController
     return nil unless auth_header&.start_with?("Bearer ")
 
     auth_header.delete_prefix("Bearer ").strip
+  end
+
+  def rate_limit_key
+    token = extract_bearer_token
+    if token
+      "mcp_token:#{Digest::SHA256.hexdigest(token)}"
+    else
+      "mcp_ip:#{request.remote_ip}"
+    end
   end
 
   def render_unauthorized(message)
