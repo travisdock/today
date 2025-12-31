@@ -33,6 +33,8 @@ module Auth0Config
     end
 
     def issuer
+      return nil unless domain.present?
+
       "https://#{domain}/"
     end
 
