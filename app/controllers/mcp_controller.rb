@@ -30,8 +30,8 @@ class McpController < ApplicationController
   private
 
   def authenticate_mcp_token!
-    # Development bypass: allow testing with X-MCP-Dev-User-Id header
-    if Rails.env.development? && request.headers["X-MCP-Dev-User-Id"].present?
+    # Development/Test bypass: allow testing with X-MCP-Dev-User-Id header
+    if (Rails.env.development? || Rails.env.test?) && request.headers["X-MCP-Dev-User-Id"].present?
       @mcp_user = User.find_by(id: request.headers["X-MCP-Dev-User-Id"])
       return if @mcp_user
       render_unauthorized("Dev user not found")
