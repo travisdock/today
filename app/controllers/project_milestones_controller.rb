@@ -20,7 +20,7 @@ class ProjectMilestonesController < ApplicationController
             turbo_stream.replace("milestone_form", partial: "projects/milestones/form",
                                  locals: { project: @project, milestone: @project.milestones.build }),
             turbo_stream.replace("milestones_list", partial: "projects/milestones/list",
-                                 locals: { project: @project, milestones: @project.milestones.active })
+                                 locals: { project: @project, milestones: @project.milestones.active.with_active_todos_count })
           ]
         end
         format.html { redirect_to project_path(@project), notice: "Milestone added." }
@@ -42,19 +42,21 @@ class ProjectMilestonesController < ApplicationController
       if @milestone.update(milestone_params)
         flash.now[:notice] = "Milestone updated."
         format.turbo_stream do
+          milestone_with_count = @project.milestones.with_active_todos_count.find(@milestone.id)
           render turbo_stream: [
             turbo_stream.replace("flash", partial: "shared/flash"),
             turbo_stream.replace(dom_id(@milestone), partial: "projects/milestones/milestone",
-                                 locals: { project: @project, milestone: @milestone })
+                                 locals: { project: @project, milestone: milestone_with_count })
           ]
         end
         format.html { redirect_to project_path(@project), notice: "Milestone updated." }
       else
         format.turbo_stream do
+          milestone_with_count = @project.milestones.with_active_todos_count.find(@milestone.id)
           render turbo_stream: [
             turbo_stream.replace("flash", partial: "shared/flash"),
             turbo_stream.replace(dom_id(@milestone), partial: "projects/milestones/milestone",
-                                 locals: { project: @project, milestone: @milestone })
+                                 locals: { project: @project, milestone: milestone_with_count })
           ], status: :unprocessable_entity
         end
         format.html { redirect_to project_path(@project), alert: "Could not update milestone." }
@@ -71,7 +73,7 @@ class ProjectMilestonesController < ApplicationController
         render turbo_stream: [
           turbo_stream.replace("flash", partial: "shared/flash"),
           turbo_stream.replace("milestones_list", partial: "projects/milestones/list",
-                               locals: { project: @project, milestones: @project.milestones.active })
+                               locals: { project: @project, milestones: @project.milestones.active.with_active_todos_count })
         ]
       end
       format.html { redirect_to project_path(@project), notice: "Milestone deleted.", status: :see_other }
@@ -93,9 +95,9 @@ class ProjectMilestonesController < ApplicationController
         render turbo_stream: [
           turbo_stream.replace("flash", partial: "shared/flash"),
           turbo_stream.replace("milestones_list", partial: "projects/milestones/list",
-                               locals: { project: @project, milestones: @project.milestones.active }),
+                               locals: { project: @project, milestones: @project.milestones.active.with_active_todos_count }),
           turbo_stream.replace("completed_milestones_list", partial: "projects/milestones/completed_list",
-                               locals: { project: @project, milestones: @project.milestones.completed })
+                               locals: { project: @project, milestones: @project.milestones.completed.with_active_todos_count })
         ]
       end
       format.html { redirect_to project_path(@project), notice: message, status: :see_other }

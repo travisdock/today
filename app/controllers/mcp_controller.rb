@@ -236,7 +236,7 @@ class McpController < ApplicationController
         unless project
           "Project not found with ID #{args[:project_id]}."
         else
-          milestones = project.milestones.active
+          milestones = project.milestones.active.with_active_todos_count
 
           if milestones.empty? && args[:include_completed].to_s.downcase != "true"
             "No active milestones for '#{project.name}'."
@@ -245,8 +245,7 @@ class McpController < ApplicationController
             if milestones.any?
               output << "## Active Milestones"
               output << milestones.map.with_index(1) do |m, i|
-                todo_count = m.todos.where(completed_at: nil).count
-                "#{i}. **#{m.name}**#{m.description.present? ? " - #{m.description.truncate(80)}" : ''}#{todo_count > 0 ? " (#{todo_count} todos)" : ''} [ID: #{m.id}]"
+                "#{i}. **#{m.name}**#{m.description.present? ? " - #{m.description.truncate(80)}" : ''}#{m.active_todos_count > 0 ? " (#{m.active_todos_count} todos)" : ''} [ID: #{m.id}]"
               end.join("\n")
             end
 

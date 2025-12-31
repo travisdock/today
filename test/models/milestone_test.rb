@@ -81,4 +81,77 @@ class MilestoneTest < ActiveSupport::TestCase
 
     assert_nil todo.reload.milestone_id
   end
+
+  test "with_active_todos_count preloads count via subquery" do
+    # Create some todos for the milestone
+    user = users(:one)
+    Todo.create!(title: "Active 1", user: user, milestone: @milestone, priority_window: :today)
+    Todo.create!(title: "Active 2", user: user, milestone: @milestone, priority_window: :today)
+    Todo.create!(title: "Completed", user: user, milestone: @milestone, priority_window: :today, completed_at: Time.current)
+
+    milestone = @project.milestones.with_active_todos_count.find(@milestone.id)
+
+    # Should have the preloaded count attribute
+    assert_equal 2, milestone.active_todos_count
+  end
+
+  test "active_todos_count returns preloaded value without additional query" do
+    user = users(:one)
+    Todo.create!(title: "Active", user: user, milestone: @milestone, priority_window: :today)
+
+    milestone = @project.milestones.with_active_todos_count.find(@milestone.id)
+
+    # Access count - should not trigger additional query
+    query_count = count_queries { milestone.active_todos_count }
+    assert_equal 0, query_count
+    assert_equal 1, milestone.active_todos_count
+  end
+
+  test "active_todos_count falls back to query when not preloaded" do
+    user = users(:one)
+    Todo.create!(title: "Active", user: user, milestone: @milestone, priority_window: :today)
+
+    # Load without the scope
+    milestone = @project.milestones.find(@milestone.id)
+
+    # Should still return correct count (via query)
+    assert_equal 1, milestone.active_todos_count
+  end
+
+  test "active_todos method returns active todos ordered correctly" do
+    user = users(:one)
+    todo1 = Todo.create!(title: "Tomorrow", user: user, milestone: @milestone, priority_window: :tomorrow)
+    todo2 = Todo.create!(title: "Today", user: user, milestone: @milestone, priority_window: :today)
+    Todo.create!(title: "Completed", user: user, milestone: @milestone, priority_window: :today, completed_at: Time.current)
+
+    active = @milestone.active_todos
+
+    assert_equal 2, active.count
+    assert_equal todo2, active.first  # today comes before tomorrow
+    assert_equal todo1, active.second
+  end
+
+  test "recent_completed_todos returns completed todos ordered by completion date" do
+    user = users(:one)
+    Todo.create!(title: "Active", user: user, milestone: @milestone, priority_window: :today)
+    old = Todo.create!(title: "Old", user: user, milestone: @milestone, priority_window: :today, completed_at: 2.days.ago)
+    recent = Todo.create!(title: "Recent", user: user, milestone: @milestone, priority_window: :today, completed_at: 1.day.ago)
+
+    completed = @milestone.recent_completed_todos
+
+    assert_equal 2, completed.count
+    assert_equal recent, completed.first  # most recent first
+    assert_equal old, completed.second
+  end
+
+  private
+
+  def count_queries(&block)
+    count = 0
+    counter = ->(_name, _start, _finish, _id, payload) {
+      count += 1 unless payload[:name] == "SCHEMA"
+    }
+    ActiveSupport::Notifications.subscribed(counter, "sql.active_record", &block)
+    count
+  end
 end
