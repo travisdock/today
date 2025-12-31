@@ -6,7 +6,7 @@
 # 3. Add callback URLs:
 #    - Production: https://chatgpt.com/connector_platform_oauth_redirect
 #    - Development: https://platform.openai.com/apps-manage/oauth
-# 4. Enable PKCE (required by ChatGPT)
+# 4. Enable PKCE for the OAuth authorization flow (required for ChatGPT/public clients)
 #
 # Required credentials (add to config/credentials.yml.enc):
 #   auth0:
