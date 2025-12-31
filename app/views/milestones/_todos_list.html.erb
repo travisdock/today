@@ -1,0 +1,29 @@
+<div id="milestone_todos_list" class="mt-4 space-y-6">
+  <% if active_todos.any? %>
+    <% active_todos.group_by(&:priority_window).each do |window, todos| %>
+      <div>
+        <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-2"><%= window.titleize %></h3>
+        <ul class="space-y-3">
+          <% todos.each do |todo| %>
+            <%= render "todos/todo", todo: todo, section: window.to_sym, show_milestone_label: false %>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  <% else %>
+    <p class="text-slate-500 text-sm italic">No todos yet. Add your first one above!</p>
+  <% end %>
+
+  <% if completed_todos.any? %>
+    <details class="mt-4">
+      <summary class="cursor-pointer text-sm text-slate-500 hover:text-slate-700 transition">
+        Show <%= pluralize(completed_todos.count, "completed todo") %>
+      </summary>
+      <ul class="mt-3 space-y-3">
+        <% completed_todos.each do |todo| %>
+          <%= render "todos/todo", todo: todo, section: :completed, show_milestone_label: false %>
+        <% end %>
+      </ul>
+    </details>
+  <% end %>
+</div>

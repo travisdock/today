@@ -20,6 +20,16 @@
   </section>
 
   <section class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Milestones</h2>
+
+    <%= render "projects/milestones/form", project: @project, milestone: @milestone %>
+
+    <%= render "projects/milestones/list", project: @project, milestones: @milestones %>
+
+    <%= render "projects/milestones/completed_list", project: @project, milestones: @completed_milestones %>
+  </section>
+
+  <section class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
     <h2 class="text-lg font-semibold text-slate-900 mb-4">Thoughts</h2>
 
     <%= render "projects/thoughts/form", project: @project, thought: @thought %>

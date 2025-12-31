@@ -21,6 +21,7 @@ class Project < ApplicationRecord
 
   belongs_to :user
   has_one_attached :badge, dependent: :purge_later
+  has_many :milestones, dependent: :destroy
   has_many :thoughts, dependent: :destroy
   has_many :resources, dependent: :destroy
   has_many :journal_entries, dependent: :destroy

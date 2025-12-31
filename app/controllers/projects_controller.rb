@@ -6,6 +6,9 @@ class ProjectsController < ApplicationController
   end
 
   def show
+    @milestones = @project.milestones.active
+    @completed_milestones = @project.milestones.completed
+    @milestone = @project.milestones.build
     @thoughts = @project.thoughts.last_two.with_attached_image
     @thought = @project.thoughts.build
     @resources = @project.resources.last_two

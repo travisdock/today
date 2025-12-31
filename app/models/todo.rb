@@ -1,5 +1,6 @@
 class Todo < ApplicationRecord
   belongs_to :user
+  belongs_to :milestone, optional: true, touch: true
 
   # Priority windows in display order
   PRIORITY_WINDOWS = [ :today, :tomorrow, :this_week, :next_week ].freeze

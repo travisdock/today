@@ -113,7 +113,7 @@ class McpController < ApplicationController
           args[:section] ? "No projects found in #{args[:section].humanize}." : "No active projects found."
         else
           projects.map do |p|
-            "**#{p.name}** (#{p.section.humanize})\n#{p.description.presence || 'No description'}\n- Thoughts: #{p.thoughts_count}, Resources: #{p.resources_count}, Journal: #{p.journal_entries_count}\nID: #{p.id}"
+            "**#{p.name}** (#{p.section.humanize})\n#{p.description.presence || 'No description'}\n- Thoughts: #{p.thoughts_count}, Resources: #{p.resources_count}, Journal: #{p.journal_entries_count}\nID: #{p.id} | Updated: #{p.updated_at.iso8601}"
           end.join("\n\n---\n\n")
         end
       end
@@ -130,6 +130,7 @@ class McpController < ApplicationController
         unless project
           "Project not found with ID #{args[:project_id]}."
         else
+          milestones = project.milestones.active.map { |m| "- #{m.name} (ID: #{m.id})" }.join("\n")
           thoughts = project.thoughts.order(created_at: :desc).limit(5).map { |t| "- #{(t.content.presence || '[Image]').truncate(100)}" }.join("\n")
           resources = project.resources.order(created_at: :desc).limit(5).map { |r| "- #{r.content.to_s.truncate(100)} #{r.url}" }.join("\n")
           entries = project.journal_entries.order(created_at: :desc).limit(5).map { |e| "- #{(e.content.presence || '[Image]').truncate(100)}" }.join("\n")
@@ -138,6 +139,9 @@ class McpController < ApplicationController
             # #{project.name}
             **Section:** #{project.section.humanize}
             **Description:** #{project.description.presence || 'No description'}
+
+            ## Active Milestones (#{project.milestones.active.count} total)
+            #{milestones.presence || 'None'}
 
             ## Recent Thoughts (#{project.thoughts_count} total)
             #{thoughts.presence || 'None'}
@@ -221,15 +225,56 @@ class McpController < ApplicationController
       end
     end
 
+    # Define list_milestones tool
+    server.tool("list_milestones") do
+      description "List milestones for a project"
+      argument :project_id, Integer, required: true, description: "The project ID"
+      argument :include_completed, String, required: false, description: "Include completed milestones (true to include)"
+
+      call do |args|
+        project = user.projects.find_by(id: args[:project_id])
+        unless project
+          "Project not found with ID #{args[:project_id]}."
+        else
+          milestones = project.milestones.active
+
+          if milestones.empty? && args[:include_completed].to_s.downcase != "true"
+            "No active milestones for '#{project.name}'."
+          else
+            output = []
+            if milestones.any?
+              output << "## Active Milestones"
+              output << milestones.map.with_index(1) do |m, i|
+                todo_count = m.todos.where(completed_at: nil).count
+                "#{i}. **#{m.name}**#{m.description.present? ? " - #{m.description.truncate(80)}" : ''}#{todo_count > 0 ? " (#{todo_count} todos)" : ''} [ID: #{m.id}]"
+              end.join("\n")
+            end
+
+            if args[:include_completed].to_s.downcase == "true"
+              completed = project.milestones.completed
+              if completed.any?
+                output << "\n## Completed Milestones"
+                output << completed.map { |m| "- ~~#{m.name}~~ [ID: #{m.id}]" }.join("\n")
+              end
+            end
+
+            output.any? ? output.join("\n\n") : "No milestones for '#{project.name}'."
+          end
+        end
+      end
+    end
+
     # Define list_todos tool
     server.tool("list_todos") do
       description "List todos organized by priority window"
       argument :priority_window, String, required: false, description: "Filter: today, tomorrow, this_week, next_week"
+      argument :milestone_id, Integer, required: false, description: "Filter by milestone ID"
       argument :include_completed, String, required: false, description: "Include completed todos (true to include)"
 
       call do |args|
-        todos = user.todos.active
+        todos = user.todos.includes(milestone: :project).active
         todos = todos.where(priority_window: args[:priority_window]) if args[:priority_window].present?
+        todos = todos.where(milestone_id: args[:milestone_id]) if args[:milestone_id].present?
         todos = todos.order(:priority_window, :position)
 
         if todos.empty?
@@ -241,14 +286,20 @@ class McpController < ApplicationController
             window_todos = grouped[window] || []
             next if window_todos.empty?
             output << "## #{window.humanize}"
-            output << window_todos.map.with_index(1) { |t, i| "#{i}. #{t.title}" }.join("\n")
+            output << window_todos.map.with_index(1) do |t, i|
+              milestone_info = t.milestone ? " [#{t.milestone.project.name}: #{t.milestone.name}]" : ""
+              "#{i}. #{t.title}#{milestone_info}"
+            end.join("\n")
           end
 
           if args[:include_completed].to_s.downcase == "true"
-            completed = user.todos.completed
+            completed = user.todos.includes(milestone: :project).completed
             if completed.any?
               output << "\n## Completed (last 7 days)"
-              output << completed.map { |t| "- ~~#{t.title}~~" }.join("\n")
+              output << completed.map do |t|
+                milestone_info = t.milestone ? " [#{t.milestone.project.name}: #{t.milestone.name}]" : ""
+                "- ~~#{t.title}~~#{milestone_info}"
+              end.join("\n")
             end
           end
 

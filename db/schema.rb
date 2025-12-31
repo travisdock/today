@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_30_141816) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_31_212540) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -46,6 +46,18 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_30_141816) do
     t.datetime "updated_at", null: false
     t.index ["project_id", "created_at"], name: "index_journal_entries_on_project_id_and_created_at", order: { created_at: :desc }
     t.index ["project_id"], name: "index_journal_entries_on_project_id"
+  end
+
+  create_table "milestones", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", limit: 255, null: false
+    t.integer "position", default: 0, null: false
+    t.integer "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "position"], name: "index_milestones_on_project_id_and_position"
+    t.index ["project_id"], name: "index_milestones_on_project_id"
   end
 
   create_table "projects", force: :cascade do |t|
@@ -98,11 +110,13 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_30_141816) do
   create_table "todos", force: :cascade do |t|
     t.datetime "completed_at"
     t.datetime "created_at", null: false
+    t.integer "milestone_id"
     t.integer "position", default: 0, null: false
     t.string "priority_window", default: "today", null: false
     t.string "title", limit: 255, null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.index ["milestone_id"], name: "index_todos_on_milestone_id"
     t.index ["user_id", "completed_at"], name: "index_todos_on_user_completed", order: { completed_at: :desc }, where: "completed_at IS NOT NULL"
     t.index ["user_id", "priority_window", "position"], name: "index_todos_active_window_position", unique: true, where: "completed_at IS NULL"
     t.index ["user_id"], name: "index_todos_on_user_id"
@@ -122,9 +136,11 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_30_141816) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "journal_entries", "projects", on_delete: :cascade
+  add_foreign_key "milestones", "projects"
   add_foreign_key "projects", "users"
   add_foreign_key "resources", "projects", on_delete: :cascade
   add_foreign_key "sessions", "users"
   add_foreign_key "thoughts", "projects", on_delete: :cascade
+  add_foreign_key "todos", "milestones"
   add_foreign_key "todos", "users", on_delete: :cascade
 end
