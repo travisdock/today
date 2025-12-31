@@ -210,7 +210,9 @@ class McpControllerTest < ActionDispatch::IntegrationTest
 end
 
 class WellKnownControllerTest < ActionDispatch::IntegrationTest
-  test "returns OAuth protected resource metadata" do
+  test "returns OAuth protected resource metadata when configured" do
+    skip "Auth0 not configured" unless Auth0Config.configured?
+
     get "/.well-known/oauth-protected-resource", as: :json
 
     assert_response :success
@@ -218,5 +220,15 @@ class WellKnownControllerTest < ActionDispatch::IntegrationTest
     assert json["resource"].present?
     assert json["authorization_servers"].is_a?(Array)
     assert_includes json["scopes_supported"], "read:projects"
+  end
+
+  test "returns service unavailable when Auth0 is not configured" do
+    skip "Auth0 is configured" if Auth0Config.configured?
+
+    get "/.well-known/oauth-protected-resource", as: :json
+
+    assert_response :service_unavailable
+    json = JSON.parse(response.body)
+    assert_equal "Auth0 not configured", json["error"]
   end
 end
