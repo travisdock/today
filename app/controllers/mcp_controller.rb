@@ -222,7 +222,7 @@ class McpController < ApplicationController
     server.tool("list_todos") do
       description "List todos organized by priority window"
       argument :priority_window, String, required: false, description: "Filter: today, tomorrow, this_week, next_week"
-      argument :include_completed, String, required: false, description: "Include completed todos: true/false"
+      argument :include_completed, String, required: false, description: "Include completed todos (true to include)"
 
       call do |args|
         todos = user.todos.active
@@ -241,7 +241,7 @@ class McpController < ApplicationController
             output << window_todos.map.with_index(1) { |t, i| "#{i}. #{t.title}" }.join("\n")
           end
 
-          if args[:include_completed] == "true"
+          if args[:include_completed].to_s.downcase == "true"
             completed = user.todos.completed
             if completed.any?
               output << "\n## Completed (last 7 days)"
