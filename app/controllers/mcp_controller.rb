@@ -153,7 +153,7 @@ class McpController < ApplicationController
           "Project not found with ID #{args[:project_id]}."
         else
           limit = [ [ (args[:limit] || 10).to_i, 1 ].max, 50 ].min
-          thoughts = project.thoughts.order(created_at: :desc).limit(limit)
+          thoughts = project.thoughts.with_attached_image.order(created_at: :desc).limit(limit)
 
           if thoughts.empty?
             "No thoughts for '#{project.name}'."
@@ -199,7 +199,7 @@ class McpController < ApplicationController
           "Project not found with ID #{args[:project_id]}."
         else
           limit = [ [ (args[:limit] || 10).to_i, 1 ].max, 50 ].min
-          entries = project.journal_entries.order(created_at: :desc).limit(limit)
+          entries = project.journal_entries.with_attached_image.order(created_at: :desc).limit(limit)
 
           if entries.empty?
             "No journal entries for '#{project.name}'."
