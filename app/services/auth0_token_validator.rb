@@ -24,7 +24,10 @@ class Auth0TokenValidator
   end
 
   def valid?
-    return false unless Auth0Config.configured?
+    unless Auth0Config.configured?
+      Rails.logger.info("[Auth0] Not configured - domain: #{Auth0Config.domain.present?}, audience: #{Auth0Config.audience.present?}")
+      return false
+    end
 
     # Check cache first (key is hashed token for security)
     cache_key = "auth0_token:#{Digest::SHA256.hexdigest(@token)}"
@@ -50,9 +53,14 @@ class Auth0TokenValidator
     return nil unless @userinfo
 
     email = @userinfo["email"]
-    return nil unless email
+    unless email
+      Rails.logger.info("[Auth0] No email in userinfo - keys: #{@userinfo.keys.join(', ')}")
+      return nil
+    end
 
-    User.find_by(email_address: email.downcase.strip)
+    user = User.find_by(email_address: email.downcase.strip)
+    Rails.logger.info("[Auth0] User lookup: #{user ? 'found' : 'not found'}") unless user
+    user
   end
 
   private

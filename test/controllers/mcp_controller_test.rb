@@ -17,16 +17,15 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Missing authorization token", json["error"]["message"]
   end
 
-  test "returns unauthorized with token when Auth0 is not configured" do
-    # In test environment, Auth0Config.configured? returns false
-    # so any token will be rejected with "Invalid token"
+  test "returns unauthorized with invalid token" do
+    # Token is validated against Auth0 userinfo endpoint and rejected
     post mcp_path,
-      headers: { "Authorization" => "Bearer any_token" },
+      headers: { "Authorization" => "Bearer invalid_token" },
       as: :json
 
     assert_response :unauthorized
     json = JSON.parse(response.body)
-    assert_equal "Invalid token", json["error"]["message"]
+    assert_includes json["error"]["message"], "token"
   end
 
   # === MCP Protocol Tests ===
@@ -211,11 +210,13 @@ class McpControllerTest < ActionDispatch::IntegrationTest
 end
 
 class WellKnownControllerTest < ActionDispatch::IntegrationTest
-  test "returns service unavailable when Auth0 is not configured" do
+  test "returns OAuth protected resource metadata" do
     get "/.well-known/oauth-protected-resource", as: :json
 
-    assert_response :service_unavailable
+    assert_response :success
     json = JSON.parse(response.body)
-    assert_equal "Auth0 not configured", json["error"]
+    assert json["resource"].present?
+    assert json["authorization_servers"].is_a?(Array)
+    assert_includes json["scopes_supported"], "read:projects"
   end
 end

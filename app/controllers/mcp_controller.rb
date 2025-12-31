@@ -41,18 +41,21 @@ class McpController < ApplicationController
     token = extract_bearer_token
 
     unless token
+      Rails.logger.info("[MCP Auth] No token provided")
       render_unauthorized("Missing authorization token")
       return
     end
 
     validator = Auth0TokenValidator.new(token)
     unless validator.valid?
+      Rails.logger.info("[MCP Auth] Token validation failed: #{validator.error}")
       render_unauthorized(validator.error || "Invalid token")
       return
     end
 
     @mcp_user = validator.user
     unless @mcp_user
+      Rails.logger.info("[MCP Auth] User not found for validated token")
       render_unauthorized("User not found. Please use the same email as your Today app account.")
     end
   end
