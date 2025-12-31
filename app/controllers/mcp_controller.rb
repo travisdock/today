@@ -54,7 +54,6 @@ class McpController < ApplicationController
     @mcp_user = validator.user
     unless @mcp_user
       render_unauthorized("User not found. Please use the same email as your Today app account.")
-      return
     end
   end
 
