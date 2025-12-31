@@ -9,6 +9,11 @@
 class McpController < ApplicationController
   skip_before_action :require_authentication
   skip_forgery_protection
+
+  rate_limit to: 60, within: 1.minute, only: :handle,
+    by: -> { request.remote_ip },
+    with: -> { render_rate_limited }
+
   before_action :authenticate_mcp_token!
 
   # Handle MCP JSON-RPC requests
@@ -68,6 +73,16 @@ class McpController < ApplicationController
         message: message
       }
     }, status: :unauthorized
+  end
+
+  def render_rate_limited
+    render json: {
+      jsonrpc: "2.0",
+      error: {
+        code: -32000,
+        message: "Rate limit exceeded. Try again later."
+      }
+    }, status: :too_many_requests
   end
 
   def build_mcp_server
