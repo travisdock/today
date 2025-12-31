@@ -45,7 +45,6 @@ gem "ruby_llm"
 
 # MCP (Model Context Protocol) server for ChatGPT integration
 gem "mcp-rb", require: "mcp"
-gem "jwt"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

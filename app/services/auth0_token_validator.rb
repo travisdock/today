@@ -55,10 +55,6 @@ class Auth0TokenValidator
     User.find_by(email_address: email.downcase.strip)
   end
 
-  def payload
-    @userinfo
-  end
-
   private
 
   def validate_via_userinfo

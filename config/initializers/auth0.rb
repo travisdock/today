@@ -36,10 +36,6 @@ module Auth0Config
       "https://#{domain}/"
     end
 
-    def jwks_uri
-      "https://#{domain}/.well-known/jwks.json"
-    end
-
     def configured?
       domain.present? && audience.present?
     end
