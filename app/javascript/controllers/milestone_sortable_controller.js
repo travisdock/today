@@ -36,6 +36,7 @@ export default class extends Sortable {
       })
     } catch (error) {
       console.error("Failed to reorder milestones", error)
+      alert("There was a problem saving the new order. Please try again.")
     }
   }
 }
