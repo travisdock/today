@@ -5,7 +5,7 @@ class CreateMilestones < ActiveRecord::Migration[8.1]
       t.text :description
       t.integer :position, null: false, default: 0
       t.datetime :completed_at
-      t.references :project, null: false, foreign_key: true
+      t.references :project, null: false, foreign_key: { on_delete: :cascade }
 
       t.timestamps
     end
