@@ -142,4 +142,37 @@ class ProjectMilestonesControllerTest < ActionDispatch::IntegrationTest
     get project_milestone_url(projects(:other_user), other_milestone)
     assert_response :not_found
   end
+
+  test "reorders milestones" do
+    first = @project.milestones.create!(name: "First", position: 1)
+    second = @project.milestones.create!(name: "Second", position: 2)
+    third = @project.milestones.create!(name: "Third", position: 3)
+
+    patch reorder_project_milestones_url(@project), params: { order: [ third.id, first.id, second.id ] }
+
+    assert_response :ok
+    assert_equal 1, third.reload.position
+    assert_equal 2, first.reload.position
+    assert_equal 3, second.reload.position
+  end
+
+  test "reorder requires authentication" do
+    sign_out
+
+    patch reorder_project_milestones_url(@project), params: { order: [ @milestone.id ] }
+    assert_redirected_to new_session_url
+  end
+
+  test "reorder fails with empty order" do
+    patch reorder_project_milestones_url(@project), params: { order: [] }
+    assert_response :unprocessable_entity
+  end
+
+  test "cannot reorder other users milestones" do
+    other_project = projects(:other_user)
+    other_milestone = milestones(:other_project)
+
+    patch reorder_project_milestones_url(other_project), params: { order: [ other_milestone.id ] }
+    assert_response :not_found
+  end
 end

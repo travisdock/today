@@ -16,8 +16,8 @@ class MilestoneTodosController < ApplicationController
                                           todo: current_user.todos.build(milestone: @milestone, priority_window: :today) }),
             turbo_stream.replace("milestone_todos_list", partial: "milestones/todos_list",
                                  locals: { milestone: @milestone,
-                                          active_todos: @milestone.todos.where(completed_at: nil).order(:priority_window, :position),
-                                          completed_todos: @milestone.todos.where.not(completed_at: nil).order(completed_at: :desc).limit(10) })
+                                          active_todos: @milestone.active_todos,
+                                          completed_todos: @milestone.recent_completed_todos })
           ]
         end
         format.html { redirect_to project_milestone_path(@project, @milestone), notice: "Todo added." }

@@ -4,8 +4,8 @@ class ProjectMilestonesController < ApplicationController
 
   def show
     @todo = current_user.todos.build(milestone: @milestone, priority_window: :today)
-    @active_todos = @milestone.todos.where(completed_at: nil).order(:priority_window, :position)
-    @completed_todos = @milestone.todos.where.not(completed_at: nil).order(completed_at: :desc).limit(10)
+    @active_todos = @milestone.active_todos
+    @completed_todos = @milestone.recent_completed_todos
   end
 
   def create
@@ -100,6 +100,24 @@ class ProjectMilestonesController < ApplicationController
       end
       format.html { redirect_to project_path(@project), notice: message, status: :see_other }
     end
+  end
+
+  def reorder
+    ids = Array(params[:order]).map(&:to_i)
+    return head :unprocessable_entity if ids.empty?
+
+    Milestone.transaction do
+      milestones = @project.milestones.where(id: ids).lock("FOR UPDATE")
+      return head :unprocessable_entity if milestones.count != ids.count
+
+      ids.each_with_index do |id, index|
+        milestones.find { |m| m.id == id }&.update_column(:position, index + 1)
+      end
+    end
+
+    head :ok
+  rescue ActiveRecord::RecordNotFound
+    head :not_found
   end
 
   private

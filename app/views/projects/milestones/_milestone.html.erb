@@ -1,4 +1,4 @@
-<%= tag.div id: dom_id(milestone), class: "rounded-xl bg-slate-50 p-4 group" do %>
+<%= tag.div id: dom_id(milestone), class: "rounded-xl bg-slate-50 p-4 group relative", data: { id: milestone.id } do %>
   <div class="flex items-center justify-between gap-3">
     <div class="flex items-center gap-3 flex-1 min-w-0">
       <%= button_to toggle_complete_project_milestone_path(project, milestone),
@@ -17,6 +17,18 @@
     </div>
 
     <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <% unless milestone.completed? %>
+        <span class="milestone-drag-handle cursor-grab p-1 text-slate-400 hover:text-slate-600 transition" aria-label="Drag to reorder">
+          <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <circle cx="7" cy="6" r=".9" />
+            <circle cx="13" cy="6" r=".9" />
+            <circle cx="7" cy="10" r=".9" />
+            <circle cx="13" cy="10" r=".9" />
+            <circle cx="7" cy="14" r=".9" />
+            <circle cx="13" cy="14" r=".9" />
+          </svg>
+        </span>
+      <% end %>
       <%= button_to project_milestone_path(project, milestone),
             method: :delete,
             class: "text-red-500 hover:text-red-700 transition p-1",
@@ -33,10 +45,9 @@
     <p class="mt-2 text-sm text-slate-600 pl-9"><%= milestone.description %></p>
   <% end %>
 
-  <% todo_count = milestone.todos.where(completed_at: nil).count %>
-  <% if todo_count > 0 %>
+  <% if milestone.active_todos_count > 0 %>
     <p class="mt-2 text-xs text-slate-400 pl-9">
-      <%= pluralize(todo_count, "active todo") %>
+      <%= pluralize(milestone.active_todos_count, "active todo") %>
     </p>
   <% end %>
 <% end %>

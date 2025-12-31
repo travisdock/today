@@ -16,6 +16,9 @@ Rails.application.routes.draw do
     resources :resources, only: [ :create ], controller: "project_resources"
     resources :journal_entries, only: [ :create ], controller: "project_journal_entries"
     resources :milestones, only: [ :create, :update, :destroy, :show ], controller: "project_milestones" do
+      collection do
+        patch :reorder
+      end
       member do
         patch :toggle_complete
       end
