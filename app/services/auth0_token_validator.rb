@@ -1,7 +1,8 @@
 # Validates tokens from Auth0 for MCP server authentication
 #
 # Supports both JWT and opaque access tokens by validating via
-# the userinfo endpoint.
+# the userinfo endpoint. Caches successful validations to reduce
+# Auth0 API calls and improve response times.
 #
 # Usage:
 #   validator = Auth0TokenValidator.new(token)
@@ -12,6 +13,8 @@
 #   end
 #
 class Auth0TokenValidator
+  CACHE_TTL = 1.hour
+
   attr_reader :error
 
   def initialize(token)
@@ -23,8 +26,23 @@ class Auth0TokenValidator
   def valid?
     return false unless Auth0Config.configured?
 
+    # Check cache first (key is hashed token for security)
+    cache_key = "auth0_token:#{Digest::SHA256.hexdigest(@token)}"
+    cached_userinfo = Rails.cache.read(cache_key)
+
+    if cached_userinfo
+      @userinfo = cached_userinfo
+      return true
+    end
+
     # Validate by calling userinfo endpoint - works for both JWT and opaque tokens
     validate_via_userinfo
+
+    # Cache successful validations
+    if @error.nil? && @userinfo
+      Rails.cache.write(cache_key, @userinfo, expires_in: CACHE_TTL)
+    end
+
     @error.nil?
   end
 
