@@ -17,20 +17,16 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Missing authorization token", json["error"]["message"]
   end
 
-  test "returns unauthorized with invalid token" do
+  test "returns unauthorized with token when Auth0 is not configured" do
+    # In test environment, Auth0Config.configured? returns false
+    # so any token will be rejected with "Invalid token"
     post mcp_path,
-      headers: { "Authorization" => "Bearer invalid_token" },
+      headers: { "Authorization" => "Bearer any_token" },
       as: :json
 
     assert_response :unauthorized
-  end
-
-  test "returns unauthorized when Auth0 is not configured" do
-    post mcp_path,
-      headers: { "Authorization" => "Bearer some_token" },
-      as: :json
-
-    assert_response :unauthorized
+    json = JSON.parse(response.body)
+    assert_equal "Invalid token", json["error"]["message"]
   end
 
   # === MCP Protocol Tests ===
