@@ -307,6 +307,6 @@ class McpController < ApplicationController
       }
     end
   rescue JSON::ParserError => e
-    { jsonrpc: "2.0", error: { code: -32700, message: "Parse error: #{e.message}" } }
+    { jsonrpc: "2.0", id: nil, error: { code: -32700, message: "Parse error: #{e.message}" } }
   end
 end
