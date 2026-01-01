@@ -3,7 +3,12 @@
     <% active_todos.group_by(&:priority_window).each do |window, todos| %>
       <div>
         <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-2"><%= window.titleize %></h3>
-        <ul class="space-y-3">
+        <ul class="space-y-3"
+            <% if todos.any? %>
+              data-controller="todo-sortable"
+              data-todo-sortable-url-value="<%= reorder_todos_path %>"
+              data-todo-sortable-handle-value=".todo-drag-handle"
+            <% end %>>
           <% todos.each do |todo| %>
             <%= render "todos/todo", todo: todo, section: window.to_sym, show_milestone_label: false %>
           <% end %>
