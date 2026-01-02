@@ -165,22 +165,35 @@ class TodosController < ApplicationController
       @todo.update!(priority_window: new_window, position: next_position)
     end
 
-    # Get updated todos for both windows
-    old_window_todos = current_user.todos.active.where(priority_window: old_window).order(:position)
-    new_window_todos = current_user.todos.active.where(priority_window: new_window).order(:position)
-
     respond_to do |format|
       flash.now[:notice] = "Todo moved to #{new_window.titleize}."
       format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace("flash", partial: "shared/flash"),
-          turbo_stream.replace("#{old_window}_list_container",
+        streams = [ turbo_stream.replace("flash", partial: "shared/flash") ]
+
+        if params[:source_milestone_id].present?
+          # Request came from milestone page - update the milestone todos list
+          milestone = Milestone.joins(:project).where(projects: { user_id: current_user.id }).find(params[:source_milestone_id])
+          streams << turbo_stream.replace("milestone_todos_list",
+            partial: "milestones/todos_list",
+            locals: {
+              milestone: milestone,
+              active_todos: milestone.active_todos,
+              completed_todos: milestone.recent_completed_todos
+            })
+        else
+          # Request came from todos index - update the priority window containers
+          old_window_todos = current_user.todos.active.where(priority_window: old_window).order(:position)
+          new_window_todos = current_user.todos.active.where(priority_window: new_window).order(:position)
+
+          streams << turbo_stream.replace("#{old_window}_list_container",
             partial: "todos/priority_window_container",
-            locals: { window: old_window.to_sym, todos: old_window_todos }),
-          turbo_stream.replace("#{new_window}_list_container",
+            locals: { window: old_window.to_sym, todos: old_window_todos })
+          streams << turbo_stream.replace("#{new_window}_list_container",
             partial: "todos/priority_window_container",
             locals: { window: new_window.to_sym, todos: new_window_todos })
-        ]
+        end
+
+        render turbo_stream: streams
       end
       format.html { redirect_to todos_path, notice: "Todo moved.", status: :see_other }
     end

@@ -5,7 +5,7 @@
         <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-2"><%= window.titleize %></h3>
         <ul class="space-y-3">
           <% todos.each do |todo| %>
-            <%= render "todos/todo", todo: todo, section: window.to_sym, show_milestone_label: false %>
+            <%= render "todos/todo", todo: todo, section: window.to_sym, show_milestone_label: false, source_milestone: milestone %>
           <% end %>
         </ul>
       </div>
@@ -21,7 +21,7 @@
       </summary>
       <ul class="mt-3 space-y-3">
         <% completed_todos.each do |todo| %>
-          <%= render "todos/todo", todo: todo, section: :completed, show_milestone_label: false %>
+          <%= render "todos/todo", todo: todo, section: :completed, show_milestone_label: false, source_milestone: milestone %>
         <% end %>
       </ul>
     </details>
