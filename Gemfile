@@ -72,5 +72,5 @@ group :test do
 
   # Pin minitest to < 6 due to Rails 8.1.1 incompatibility
   # https://github.com/rails/rails/issues/56406
-  gem "minitest", "< 6"
+  gem "minitest", "< 7"
 end
