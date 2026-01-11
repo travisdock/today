@@ -1,4 +1,9 @@
 class Current < ActiveSupport::CurrentAttributes
   attribute :session
-  delegate :user, to: :session, allow_nil: true
+  attribute :api_token
+  attribute :user
+
+  def user
+    super || session&.user
+  end
 end

@@ -1,0 +1,26 @@
+<%= turbo_frame_tag dom_id(api_token) do %>
+  <div id="<%= dom_id(api_token) %>" class="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm border border-slate-200">
+    <div class="flex-1">
+      <div class="flex items-center gap-3">
+        <span class="font-medium text-slate-900"><%= api_token.name %></span>
+        <span class="rounded-full px-2 py-0.5 text-xs font-medium <%= scope_badge_class(api_token.scopes) %>">
+          <%= scope_label(api_token.scopes) %>
+        </span>
+      </div>
+      <div class="mt-1 text-xs text-slate-500">
+        <code class="rounded bg-slate-100 px-1"><%= api_token.token_prefix %>...</code>
+        <span class="mx-2">|</span>
+        Created <%= time_ago_in_words(api_token.created_at) %> ago
+        <% if api_token.last_used_at %>
+          <span class="mx-2">|</span>
+          Last used <%= time_ago_in_words(api_token.last_used_at) %> ago
+        <% end %>
+      </div>
+    </div>
+
+    <%= button_to "Revoke", api_token_path(api_token),
+        method: :delete,
+        data: { turbo_confirm: "Are you sure you want to revoke this token?" },
+        class: "rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-200" %>
+  </div>
+<% end %>

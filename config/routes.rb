@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   resource :session
   resources :users, only: %i[new create show]
+  resources :api_tokens, only: %i[index create destroy]
   resources :todos, only: %i[index create destroy] do
     collection do
       patch :reorder
@@ -35,6 +36,29 @@ Rails.application.routes.draw do
     resources :todos, only: :create do
       collection do
         patch :bulk_move
+      end
+    end
+
+    # Versioned API for external access via tokens
+    namespace :v1 do
+      get "docs", to: "docs#show"
+
+      resources :projects do
+        resources :milestones do
+          member do
+            patch :toggle_complete
+          end
+        end
+        resources :thoughts
+        resources :resources
+        resources :journal_entries
+      end
+
+      resources :todos do
+        member do
+          patch :complete
+          patch :move
+        end
       end
     end
   end

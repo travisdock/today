@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_31_212540) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_11_165423) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -37,6 +37,22 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_31_212540) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "api_tokens", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "last_used_at"
+    t.string "name", limit: 255, null: false
+    t.datetime "revoked_at"
+    t.string "scopes", default: "read", null: false
+    t.string "token_digest", null: false
+    t.string "token_prefix", limit: 8, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["token_digest"], name: "index_api_tokens_on_token_digest", unique: true
+    t.index ["token_prefix"], name: "index_api_tokens_on_token_prefix"
+    t.index ["user_id", "revoked_at"], name: "index_api_tokens_on_user_id_and_revoked_at"
+    t.index ["user_id"], name: "index_api_tokens_on_user_id"
   end
 
   create_table "journal_entries", force: :cascade do |t|
@@ -135,6 +151,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_31_212540) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "api_tokens", "users", on_delete: :cascade
   add_foreign_key "journal_entries", "projects", on_delete: :cascade
   add_foreign_key "milestones", "projects"
   add_foreign_key "projects", "users"
