@@ -1,0 +1,82 @@
+<div class="w-full max-w-2xl rounded-3xl bg-white/80 px-10 py-12 text-slate-900 shadow-2xl backdrop-blur-lg">
+  <h1 class="text-center text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">API Tokens</h1>
+
+  <p class="mt-4 text-center text-sm text-slate-600">
+    Create tokens to access the API programmatically. Tokens are shown once at creation.
+  </p>
+
+  <% if @plaintext_token.present? %>
+    <div class="mt-6 rounded-2xl border border-emerald-300/70 bg-emerald-50 px-6 py-5">
+      <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Your New Token (copy now!)</dt>
+      <dd class="mt-2 flex items-center gap-2">
+        <code id="new-token-value" class="flex-1 overflow-x-auto rounded-lg bg-slate-900 px-4 py-2 text-sm text-emerald-400 font-mono"><%= @plaintext_token %></code>
+        <button
+          type="button"
+          onclick="navigator.clipboard.writeText(document.getElementById('new-token-value').textContent)"
+          class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+          Copy
+        </button>
+      </dd>
+    </div>
+  <% end %>
+
+  <div class="mt-8 rounded-2xl bg-slate-900/5 px-6 py-5">
+    <h2 class="text-lg font-semibold text-slate-900">Create New Token</h2>
+
+    <%= form_with model: @new_token, url: api_tokens_path, class: "mt-4 space-y-4" do |form| %>
+      <% if @new_token.errors.any? %>
+        <div class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          <%= @new_token.errors.full_messages.to_sentence %>
+        </div>
+      <% end %>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <%= form.label :name, "Token Name", class: "block text-sm font-semibold text-slate-700" %>
+          <%= form.text_field :name,
+              placeholder: "e.g., CLI Access, CI/CD Pipeline",
+              required: true,
+              class: "mt-1 w-full rounded-xl border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" %>
+        </div>
+
+        <div>
+          <%= form.label :scopes, "Permissions", class: "block text-sm font-semibold text-slate-700" %>
+          <%= form.select :scopes,
+              [["Read Only", "read"], ["Write Only", "write"], ["Read & Write", "read_write"]],
+              {},
+              class: "mt-1 w-full rounded-xl border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" %>
+        </div>
+      </div>
+
+      <%= form.submit "Create Token",
+          class: "rounded-xl bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-500 focus:ring-2 focus:ring-blue-500/50" %>
+    <% end %>
+  </div>
+
+  <div class="mt-8">
+    <h2 class="text-lg font-semibold text-slate-900">Active Tokens</h2>
+
+    <% if @api_tokens.empty? %>
+      <p class="mt-4 text-sm text-slate-500">No active tokens. Create one above.</p>
+    <% else %>
+      <div class="mt-4 space-y-3">
+        <% @api_tokens.each do |token| %>
+          <%= render "api_tokens/api_token", api_token: token %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-8 rounded-2xl bg-blue-50 px-6 py-4">
+    <h3 class="text-sm font-semibold text-blue-900">Using Your Token</h3>
+    <p class="mt-2 text-sm text-blue-700">
+      Include your token in the <code class="rounded bg-blue-100 px-1">Authorization</code> header:
+    </p>
+    <code class="mt-2 block rounded-lg bg-slate-900 px-4 py-2 text-xs text-green-400">
+      Authorization: Bearer pat_your_token_here
+    </code>
+    <p class="mt-2 text-sm text-blue-700">
+      API Base URL: <code class="rounded bg-blue-100 px-1"><%= request.base_url %>/api/v1/</code>
+    </p>
+  </div>
+</div>
