@@ -103,14 +103,14 @@ class McpController < ApplicationController
     # Define list_projects tool
     server.tool("list_projects") do
       description "List all projects for the authenticated user"
-      argument :section, String, required: false, description: "Filter by section: this_month, next_month, this_year, next_year"
+      argument :section, String, required: false, description: "Filter by section: active, this_month, next_month, this_year, next_year"
 
       call do |args|
-        projects = user.projects.active.ordered
+        projects = user.projects.unarchived.ordered
         projects = projects.where(section: args[:section]) if args[:section].present?
 
         if projects.empty?
-          args[:section] ? "No projects found in #{args[:section].humanize}." : "No active projects found."
+          args[:section] ? "No projects found in #{args[:section].humanize}." : "No projects found."
         else
           projects.map do |p|
             "**#{p.name}** (#{p.section.humanize})\n#{p.description.presence || 'No description'}\n- Thoughts: #{p.thoughts_count}, Resources: #{p.resources_count}, Journal: #{p.journal_entries_count}\nID: #{p.id} | Updated: #{p.updated_at.iso8601}"

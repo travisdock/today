@@ -5,7 +5,7 @@ module Api
       require_scope :write, only: [ :create, :update, :destroy ]
 
       def index
-        projects = current_user.projects.active.ordered
+        projects = current_user.projects.unarchived.ordered
         render json: { projects: projects.map { |p| project_json(p) } }
       end
 

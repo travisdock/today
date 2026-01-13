@@ -2,7 +2,7 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: %i[show edit update]
 
   def index
-    @projects_grouped = current_user.projects.active.ordered.group_by(&:section)
+    @projects_grouped = current_user.projects.unarchived.ordered.group_by(&:section)
   end
 
   def show
