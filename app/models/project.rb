@@ -1,18 +1,20 @@
 class Project < ApplicationRecord
   include ImageAttachable
 
-  SECTIONS = [ :this_month, :next_month, :this_year, :next_year ].freeze
+  SECTIONS = [ :active, :this_month, :next_month, :this_year, :next_year ].freeze
 
   SECTION_ORDER_SQL = [
     "CASE section",
-    "WHEN 'this_month' THEN 1",
-    "WHEN 'next_month' THEN 2",
-    "WHEN 'this_year' THEN 3",
-    "WHEN 'next_year' THEN 4",
+    "WHEN 'active' THEN 1",
+    "WHEN 'this_month' THEN 2",
+    "WHEN 'next_month' THEN 3",
+    "WHEN 'this_year' THEN 4",
+    "WHEN 'next_year' THEN 5",
     "END"
   ].join(" ").freeze
 
   enum :section, {
+    active: "active",
     this_month: "this_month",
     next_month: "next_month",
     this_year: "this_year",
@@ -32,6 +34,6 @@ class Project < ApplicationRecord
     content_types: %w[image/jpeg image/jpg image/png],
     max_size: 5.megabytes
 
-  scope :active, -> { where(archived_at: nil) }
+  scope :unarchived, -> { where(archived_at: nil) }
   scope :ordered, -> { order(Arel.sql(SECTION_ORDER_SQL)).order(created_at: :desc) }
 end

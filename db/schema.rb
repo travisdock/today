@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_11_165423) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_13_000001) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -92,7 +92,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_11_165423) do
     t.index ["user_id", "archived_at", "created_at"], name: "index_projects_on_user_active_created"
     t.index ["user_id", "section"], name: "index_projects_on_user_section"
     t.index ["user_id"], name: "index_projects_on_user_id"
-    t.check_constraint "section IN ('this_month', 'next_month', 'this_year', 'next_year')", name: "section_check"
+    t.check_constraint "section IN ('active', 'this_month', 'next_month', 'this_year', 'next_year')", name: "section_check"
   end
 
   create_table "resources", force: :cascade do |t|
