@@ -12,6 +12,17 @@ class Api::V1::TrmnlControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  test "returns forbidden without read scope" do
+    _token, plaintext_token = ApiToken.generate_for(user: @user, name: "Write Only Token", scopes: "write")
+    write_only_header = { "Authorization" => "Bearer #{plaintext_token}" }
+
+    get api_v1_trmnl_dashboard_url, headers: write_only_header
+    assert_response :forbidden
+
+    json = JSON.parse(response.body)
+    assert_equal "Insufficient scope. Required: read", json["error"]
+  end
+
   test "returns dashboard with todos grouped by priority window" do
     get api_v1_trmnl_dashboard_url, headers: @auth_header
     assert_response :success
