@@ -28,6 +28,9 @@ Rails.application.routes.draw do
   end
   resources :agents, only: :create
 
+  # TRMNL e-ink display preview
+  get "trmnl/preview", to: "trmnl_preview#show", as: :trmnl_preview
+
   # Streaming voice command API endpoints
   namespace :api do
     namespace :gemini do
@@ -42,6 +45,7 @@ Rails.application.routes.draw do
     # Versioned API for external access via tokens
     namespace :v1 do
       get "docs", to: "docs#show"
+      get "trmnl/dashboard", to: "trmnl#dashboard"
 
       resources :projects do
         resources :milestones do
