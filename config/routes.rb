@@ -42,6 +42,7 @@ Rails.application.routes.draw do
     # Versioned API for external access via tokens
     namespace :v1 do
       get "docs", to: "docs#show"
+      get "trmnl/dashboard", to: "trmnl#dashboard"
 
       resources :projects do
         resources :milestones do
