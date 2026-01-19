@@ -1,7 +1,7 @@
 module Api
   module V1
     class TodosController < BaseController
-      require_scope :read, only: [ :index, :show ]
+      require_scope :read, only: [ :index, :show, :week_review ]
       require_scope :write, only: [ :create, :update, :destroy, :complete, :move ]
 
       def index
@@ -12,6 +12,17 @@ module Api
       def show
         todo = current_user.todos.find(params[:id])
         render json: { todo: todo_json(todo) }
+      end
+
+      def week_review
+        service = WeekReviewService.new(current_user)
+        render json: {
+          todos: service.completed_todos,
+          milestones: service.milestones,
+          projects: service.projects,
+          summary: service.summary,
+          generated_at: Time.current.iso8601
+        }
       end
 
       def create

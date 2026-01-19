@@ -59,6 +59,9 @@ Rails.application.routes.draw do
       end
 
       resources :todos do
+        collection do
+          get :week_review
+        end
         member do
           patch :complete
           patch :move
