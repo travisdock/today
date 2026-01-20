@@ -3,7 +3,14 @@
 <div class="w-full max-w-3xl space-y-8 pb-32">
   <%= render "shared/flash" %>
 
-  <section class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur">
+  <section class="rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur relative overflow-hidden">
+    <% if @project.completed? %>
+      <div class="absolute top-4 right-4 rotate-12 pointer-events-none">
+        <div class="border-4 border-green-500 rounded-lg px-4 py-2 opacity-80">
+          <span class="text-green-500 font-black text-2xl tracking-wider uppercase">Completed</span>
+        </div>
+      </div>
+    <% end %>
     <div class="flex items-start gap-4">
       <%= render "projects/badge", project: @project, size: :medium %>
       <div class="flex-1 min-w-0">
@@ -11,9 +18,14 @@
         <% if @project.description.present? %>
           <p class="mt-2 text-slate-600"><%= @project.description %></p>
         <% end %>
-        <div class="mt-4">
+        <div class="mt-4 flex items-center gap-4">
           <%= link_to "Edit Project", edit_project_path(@project),
                 class: "text-sm text-blue-600 hover:text-blue-800 transition" %>
+          <%= button_to toggle_complete_project_path(@project),
+                method: :patch,
+                class: "text-sm #{@project.completed? ? 'text-green-600 hover:text-green-800' : 'text-slate-500 hover:text-slate-700'} transition" do %>
+            <%= @project.completed? ? "Mark as Active" : "Mark as Complete" %>
+          <% end %>
         </div>
       </div>
     </div>

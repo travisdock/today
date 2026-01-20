@@ -35,5 +35,19 @@ class Project < ApplicationRecord
     max_size: 5.megabytes
 
   scope :unarchived, -> { where(archived_at: nil) }
+  scope :active, -> { unarchived.where(completed_at: nil) }
+  scope :recently_completed, -> { unarchived.where.not(completed_at: nil).where("completed_at > ?", 30.days.ago) }
   scope :ordered, -> { order(Arel.sql(SECTION_ORDER_SQL)).order(created_at: :desc) }
+
+  def completed?
+    completed_at.present?
+  end
+
+  def complete!
+    update!(completed_at: Time.current)
+  end
+
+  def uncomplete!
+    update!(completed_at: nil)
+  end
 end
