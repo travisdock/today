@@ -283,6 +283,65 @@ Content-Type: application/json
 
 Moves a todo to a different priority window and/or position.
 
+#### Week Review
+
+```
+GET /api/v1/todos/week_review
+```
+
+Returns a summary of todos completed during the current week (Monday to Sunday), along with the milestones and projects they were linked to.
+
+**Response:**
+```json
+{
+  "todos": [
+    {
+      "id": 1,
+      "title": "Complete task",
+      "completed_at": "2026-01-15T14:30:00Z",
+      "milestone": {
+        "id": 1,
+        "name": "Phase 1"
+      },
+      "project": {
+        "id": 1,
+        "name": "My Project"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Unlinked task",
+      "completed_at": "2026-01-14T10:00:00Z",
+      "milestone": null,
+      "project": null
+    }
+  ],
+  "milestones": [
+    {
+      "id": 1,
+      "name": "Phase 1"
+    }
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "name": "My Project"
+    }
+  ],
+  "summary": {
+    "week_start": "2026-01-13T00:00:00Z",
+    "week_end": "2026-01-19T23:59:59Z",
+    "total_completed": 2
+  },
+  "generated_at": "2026-01-15T15:00:00Z"
+}
+```
+
+**Notes:**
+- Todos are ordered by `completed_at` descending (most recent first)
+- `milestones` and `projects` arrays contain unique entries referenced by completed todos
+- Todos not linked to a milestone will have `null` for both `milestone` and `project`
+
 ---
 
 ### Milestones
