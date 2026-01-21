@@ -1,0 +1,38 @@
+<div id="completed_projects_list">
+  <% if projects.any? %>
+    <section class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
+      <details>
+        <summary class="cursor-pointer text-sm text-slate-500 hover:text-slate-700 transition">
+          Show <%= pluralize(projects.size, "completed project") %> (last 30 days)
+        </summary>
+        <div class="mt-4">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-slate-200 text-left text-sm font-medium text-slate-500">
+                <th class="pb-2 pr-4">Name</th>
+                <th class="hidden sm:table-cell pb-2 pr-4">Description</th>
+                <th class="pb-2 text-right">Completed</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <% projects.each do |project| %>
+                <tr class="group">
+                  <td class="py-3 pr-4">
+                    <%= link_to project.name, project_path(project),
+                          class: "font-medium text-slate-900 hover:text-blue-600 transition" %>
+                  </td>
+                  <td class="hidden sm:table-cell py-3 pr-4 text-slate-600 max-w-xs truncate">
+                    <%= project.description.presence || "—" %>
+                  </td>
+                  <td class="py-3 text-right text-sm text-slate-500">
+                    <%= time_ago_in_words(project.completed_at) %> ago
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+  <% end %>
+</div>

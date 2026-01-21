@@ -1,8 +1,9 @@
 class ProjectsController < ApplicationController
-  before_action :set_project, only: %i[show edit update]
+  before_action :set_project, only: %i[show edit update toggle_complete]
 
   def index
-    @projects_grouped = current_user.projects.unarchived.ordered.group_by(&:section)
+    @projects_grouped = current_user.projects.active.ordered.group_by(&:section)
+    @completed_projects = current_user.projects.recently_completed.ordered
   end
 
   def show
@@ -41,6 +42,30 @@ class ProjectsController < ApplicationController
       redirect_to projects_path, notice: "Project updated."
     else
       render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def toggle_complete
+    if @project.completed?
+      @project.uncomplete!
+      message = "Project marked as active."
+    else
+      @project.complete!
+      message = "Project completed."
+    end
+
+    respond_to do |format|
+      flash.now[:notice] = message
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace("flash", partial: "shared/flash"),
+          turbo_stream.replace("project_lists", partial: "projects/lists",
+                               locals: { projects_grouped: current_user.projects.active.ordered.group_by(&:section) }),
+          turbo_stream.replace("completed_projects_list", partial: "projects/completed_list",
+                               locals: { projects: current_user.projects.recently_completed.ordered })
+        ]
+      end
+      format.html { redirect_to projects_path, notice: message, status: :see_other }
     end
   end
 

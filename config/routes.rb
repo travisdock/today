@@ -12,6 +12,9 @@ Rails.application.routes.draw do
     end
   end
   resources :projects, only: %i[index new create edit update show] do
+    member do
+      patch :toggle_complete
+    end
     resource :badge, only: [ :create ], controller: "project_badges"
     resources :thoughts, only: [ :create ], controller: "project_thoughts"
     resources :resources, only: [ :create ], controller: "project_resources"
@@ -48,6 +51,9 @@ Rails.application.routes.draw do
       get "trmnl/dashboard", to: "trmnl#dashboard"
 
       resources :projects do
+        member do
+          patch :toggle_complete
+        end
         resources :milestones do
           member do
             patch :toggle_complete

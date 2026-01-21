@@ -2,7 +2,7 @@ module Api
   module V1
     class ProjectsController < BaseController
       require_scope :read, only: [ :index, :show ]
-      require_scope :write, only: [ :create, :update, :destroy ]
+      require_scope :write, only: [ :create, :update, :destroy, :toggle_complete ]
 
       def index
         projects = current_user.projects.unarchived.ordered
@@ -38,6 +38,16 @@ module Api
         head :no_content
       end
 
+      def toggle_complete
+        project = current_user.projects.find(params[:id])
+        if project.completed?
+          project.uncomplete!
+        else
+          project.complete!
+        end
+        render json: { project: project_json(project) }
+      end
+
       private
 
       def project_params
@@ -50,6 +60,7 @@ module Api
           name: project.name,
           description: project.description,
           section: project.section,
+          completed_at: project.completed_at&.iso8601,
           thoughts_count: project.thoughts_count,
           resources_count: project.resources_count,
           journal_entries_count: project.journal_entries_count,
