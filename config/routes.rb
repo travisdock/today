@@ -11,6 +11,16 @@ Rails.application.routes.draw do
       patch :move
     end
   end
+  resources :events do
+    collection do
+      post :import_preview
+      post :import
+      get :load_more
+    end
+    member do
+      get :export
+    end
+  end
   resources :projects, only: %i[index new create edit update show] do
     member do
       patch :toggle_complete

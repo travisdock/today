@@ -1,0 +1,69 @@
+<% content_for :main_class, "flex flex-1 justify-center px-4 py-5 sm:px-6 lg:px-8" %>
+
+<div class="w-full max-w-lg space-y-4">
+  <%= render "shared/flash" %>
+
+  <section class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-xl font-semibold text-slate-900"><%= @event.title %></h1>
+      <span class="<%= @event.reminder? ? 'text-slate-500 italic' : 'text-slate-700' %> text-sm">
+        <%= @event.event_type.titleize %>
+      </span>
+    </div>
+
+    <dl class="space-y-3 text-sm">
+      <div>
+        <dt class="font-medium text-slate-500">When</dt>
+        <dd class="text-slate-900">
+          <% if @event.all_day? %>
+            <%= @event.display_starts_at.strftime("%B %d, %Y") %>
+            <span class="text-slate-500">(All day)</span>
+          <% else %>
+            <%= @event.display_starts_at.strftime("%B %d, %Y at %l:%M %p") %>
+            <% if @event.display_ends_at.to_date == @event.display_starts_at.to_date %>
+              - <%= @event.display_ends_at.strftime("%l:%M %p") %>
+            <% else %>
+              - <%= @event.display_ends_at.strftime("%B %d, %Y at %l:%M %p") %>
+            <% end %>
+          <% end %>
+        </dd>
+      </div>
+
+      <% if @event.location.present? %>
+        <div>
+          <dt class="font-medium text-slate-500">Location</dt>
+          <dd class="text-slate-900"><%= @event.location %></dd>
+        </div>
+      <% end %>
+
+      <% if @event.description.present? %>
+        <div>
+          <dt class="font-medium text-slate-500">Description</dt>
+          <dd class="text-slate-900 whitespace-pre-wrap"><%= @event.description %></dd>
+        </div>
+      <% end %>
+
+      <% if @event.project.present? %>
+        <div>
+          <dt class="font-medium text-slate-500">Project</dt>
+          <dd class="text-slate-900">
+            <%= link_to @event.project.name, project_path(@event.project), class: "text-blue-600 hover:text-blue-800" %>
+          </dd>
+        </div>
+      <% end %>
+    </dl>
+
+    <div class="flex items-center gap-3 mt-6 pt-4 border-t border-slate-200">
+      <%= link_to "Edit", edit_event_path(@event),
+            class: "rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-blue-500" %>
+      <%= link_to "Export .ics", export_event_path(@event),
+            class: "text-sm text-blue-600 hover:text-blue-800 transition" %>
+      <%= button_to "Delete", event_path(@event),
+            method: :delete,
+            data: { turbo_confirm: "Delete this event?" },
+            class: "text-sm text-red-600 hover:text-red-800 transition" %>
+      <%= link_to "Back", events_path,
+            class: "text-sm text-slate-500 hover:text-slate-700 transition ml-auto" %>
+    </div>
+  </section>
+</div>

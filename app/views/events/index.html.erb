@@ -1,0 +1,31 @@
+<% content_for :main_class, "flex flex-1 justify-center px-4 py-5 sm:px-6 lg:px-8" %>
+
+<div class="w-full max-w-2xl space-y-4">
+  <%= render "shared/flash" %>
+
+  <section class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-xl font-semibold text-slate-900">Calendar</h1>
+      <div class="flex items-center gap-2">
+        <%= render "import_form" %>
+        <%= link_to "New Event", new_event_path,
+              class: "rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-blue-500" %>
+      </div>
+    </div>
+
+    <%= render "month_filter" %>
+
+    <div id="event_list">
+      <%= render "event_list", date_groups: @date_groups %>
+    </div>
+
+    <% unless params[:month].present? %>
+      <div class="mt-6 text-center">
+        <%= link_to "Load next 30 days",
+              load_more_events_path(start_date: (Date.current + 31.days).to_s),
+              data: { turbo_stream: true },
+              class: "text-sm text-blue-600 hover:text-blue-800 transition" %>
+      </div>
+    <% end %>
+  </section>
+</div>
