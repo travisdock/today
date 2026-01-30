@@ -25,11 +25,11 @@ class Event < ApplicationRecord
   scope :reminders, -> { reminder }
 
   def display_starts_at
-    all_day? ? starts_at.to_date : starts_at.in_time_zone
+    all_day? ? starts_at.utc.to_date : starts_at.in_time_zone
   end
 
   def display_ends_at
-    all_day? ? ends_at.to_date : ends_at.in_time_zone
+    all_day? ? ends_at.utc.to_date : ends_at.in_time_zone
   end
 
   private
