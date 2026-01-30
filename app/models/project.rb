@@ -27,6 +27,7 @@ class Project < ApplicationRecord
   has_many :thoughts, dependent: :destroy
   has_many :resources, dependent: :destroy
   has_many :journal_entries, dependent: :destroy
+  has_many :events, dependent: :nullify
 
   validates :name, presence: true, length: { maximum: 255 }
   validates :description, length: { maximum: 5000 }, allow_blank: true
