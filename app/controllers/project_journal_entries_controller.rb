@@ -35,7 +35,7 @@ class ProjectJournalEntriesController < ApplicationController
   end
 
   def destroy
-    @journal_entry.destroy!
+    @journal_entry.destroy
     flash.now[:notice] = "Journal entry deleted."
 
     respond_to do |format|

@@ -35,7 +35,7 @@ class ProjectThoughtsController < ApplicationController
   end
 
   def destroy
-    @thought.destroy!
+    @thought.destroy
     flash.now[:notice] = "Thought deleted."
 
     respond_to do |format|

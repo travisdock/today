@@ -35,7 +35,7 @@ class ProjectResourcesController < ApplicationController
   end
 
   def destroy
-    @resource.destroy!
+    @resource.destroy
     flash.now[:notice] = "Resource deleted."
 
     respond_to do |format|
