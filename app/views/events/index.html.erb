@@ -20,7 +20,7 @@
     </div>
 
     <% unless params[:month].present? %>
-      <div class="mt-6 text-center">
+      <div id="load_more_link" class="mt-6 text-center">
         <%= link_to "Load next 30 days",
               load_more_events_path(start_date: (Date.current + 31.days).to_s),
               data: { turbo_stream: true },
