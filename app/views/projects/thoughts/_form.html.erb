@@ -4,7 +4,13 @@
       <%= form.text_area :content,
             rows: 2,
             placeholder: "Add a thought...",
-            class: "w-full rounded-2xl border border-slate-300/80 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-400/30 resize-none" %>
+            data: {
+              controller: "auto-resize-textarea",
+              action: "input->auto-resize-textarea#resize",
+              auto_resize_textarea_min_rows_value: 2,
+              auto_resize_textarea_max_rows_value: 12
+            },
+            class: "w-full rounded-2xl border border-slate-300/80 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-400/30 resize-y" %>
     </div>
 
     <% if thought.errors.any? %>
