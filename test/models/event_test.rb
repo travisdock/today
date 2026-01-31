@@ -130,6 +130,19 @@ class EventTest < ActiveSupport::TestCase
     assert event.valid?
   end
 
+  test "rejects event with another users project" do
+    other_user_project = projects(:other_user)
+    event = Event.new(
+      user: users(:one),
+      title: "Sneaky event",
+      starts_at: 1.day.from_now,
+      ends_at: 1.day.from_now + 1.hour,
+      project: other_user_project
+    )
+    assert_not event.valid?
+    assert_includes event.errors[:project], "must belong to you"
+  end
+
   # Enum
 
   test "event_type defaults to personal" do

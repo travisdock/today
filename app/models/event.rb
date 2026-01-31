@@ -9,6 +9,7 @@ class Event < ApplicationRecord
   validates :ends_at, presence: true
   validates :uid, presence: true, uniqueness: { scope: :user_id }
   validate :ends_at_after_starts_at
+  validate :project_belongs_to_same_user, if: :project_id?
 
   before_validation :generate_uid, on: :create
 
@@ -44,5 +45,11 @@ class Event < ApplicationRecord
     if ends_at < starts_at
       errors.add(:ends_at, "must be after or equal to start time")
     end
+  end
+
+  def project_belongs_to_same_user
+    return if project&.user_id == user_id
+
+    errors.add(:project, "must belong to you")
   end
 end
