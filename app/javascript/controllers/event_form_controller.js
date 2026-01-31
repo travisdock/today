@@ -21,8 +21,27 @@ export default class extends Controller {
 
   toggleTimeFields() {
     const isAllDay = this.allDayTarget.checked
-    this.timeFieldsTarget.classList.toggle("opacity-40", isAllDay)
-    this.timeFieldsTarget.classList.toggle("pointer-events-none", isAllDay)
+
+    if (isAllDay) {
+      // Convert datetime-local to date
+      this.startsAtTarget.type = "date"
+      this.endsAtTarget.type = "date"
+      this.startsAtTarget.value = this.extractDate(this.startsAtTarget.value)
+      this.endsAtTarget.value = this.extractDate(this.endsAtTarget.value)
+    } else {
+      // Convert date to datetime-local
+      const startDate = this.startsAtTarget.value
+      const endDate = this.endsAtTarget.value
+      this.startsAtTarget.type = "datetime-local"
+      this.endsAtTarget.type = "datetime-local"
+      if (startDate) this.startsAtTarget.value = `${startDate}T09:00`
+      if (endDate) this.endsAtTarget.value = `${endDate}T10:00`
+    }
+  }
+
+  extractDate(value) {
+    if (!value) return ""
+    return value.substring(0, 10)
   }
 
   formatDateTimeLocal(date) {
