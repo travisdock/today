@@ -49,7 +49,8 @@ export default class extends Controller {
         <h3 class="font-medium text-slate-900 mb-2">${data.new_events.length} new event${data.new_events.length === 1 ? '' : 's'} will be created:</h3>
         <ul class="text-sm text-slate-600 space-y-1 ml-4">`
       data.new_events.slice(0, 10).forEach(event => {
-        html += `<li>• ${this.escapeHtml(event.title)}</li>`
+        const dateStr = this.formatEventDate(event)
+        html += `<li>• ${this.escapeHtml(event.title)} <span class="text-slate-400">(${dateStr})</span></li>`
       })
       if (data.new_events.length > 10) {
         html += `<li class="text-slate-400">...and ${data.new_events.length - 10} more</li>`
@@ -63,7 +64,8 @@ export default class extends Controller {
         <h3 class="font-medium text-slate-900 mb-2">${data.updated_events.length} existing event${data.updated_events.length === 1 ? '' : 's'} will be updated:</h3>
         <ul class="text-sm text-slate-600 space-y-1 ml-4">`
       data.updated_events.slice(0, 10).forEach(event => {
-        html += `<li>• ${this.escapeHtml(event.title)}</li>`
+        const dateStr = this.formatEventDate(event)
+        html += `<li>• ${this.escapeHtml(event.title)} <span class="text-slate-400">(${dateStr})</span></li>`
       })
       if (data.updated_events.length > 10) {
         html += `<li class="text-slate-400">...and ${data.updated_events.length - 10} more</li>`
@@ -110,6 +112,21 @@ export default class extends Controller {
     const div = document.createElement('div')
     div.textContent = text
     return div.innerHTML
+  }
+
+  formatEventDate(event) {
+    if (!event.starts_at) return ''
+
+    const date = new Date(event.starts_at)
+    const month = date.toLocaleDateString('en-US', { month: 'short' })
+    const day = date.getDate()
+
+    if (event.all_day) {
+      return `${month} ${day}, all day`
+    } else {
+      const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      return `${month} ${day}, ${time}`
+    }
   }
 
   showModal() {
