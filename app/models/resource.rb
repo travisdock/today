@@ -12,6 +12,7 @@ class Resource < ApplicationRecord
             }
 
   scope :last_two, -> { order(created_at: :desc).limit(2) }
+  scope :created_in_range, ->(range) { where(created_at: range) }
 
   private
 

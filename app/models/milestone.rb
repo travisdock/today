@@ -10,6 +10,9 @@ class Milestone < ApplicationRecord
     select("milestones.*, (SELECT COUNT(*) FROM todos WHERE todos.milestone_id = milestones.id AND todos.completed_at IS NULL) as active_todos_count")
   }
 
+  scope :created_in_range, ->(range) { where(created_at: range) }
+  scope :completed_in_range, ->(range) { where(completed_at: range) }
+
   def active_todos_count
     self[:active_todos_count] || todos.where(completed_at: nil).count
   end

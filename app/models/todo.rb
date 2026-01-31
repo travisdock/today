@@ -42,6 +42,9 @@ class Todo < ApplicationRecord
       .order(completed_at: :desc)
   }
 
+  scope :created_in_range, ->(range) { where(created_at: range) }
+  scope :completed_in_range, ->(range) { where(completed_at: range) }
+
   def completed?
     completed_at.present?
   end
