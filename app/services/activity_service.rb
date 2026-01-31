@@ -64,7 +64,14 @@ class ActivityService
       raise InvalidDateRangeError, "start_date is required for custom date range" if custom_start.blank?
       raise InvalidDateRangeError, "end_date is required for custom date range" if custom_end.blank?
 
-      if (date_range.end.to_date - date_range.begin.to_date).to_i > MAX_RANGE_DAYS
+      start_time = parse_date(custom_start)
+      end_time = parse_date(custom_end)
+
+      if end_time < start_time
+        raise InvalidDateRangeError, "end_date cannot be before start_date"
+      end
+
+      if (end_time.to_date - start_time.to_date).to_i > MAX_RANGE_DAYS
         raise InvalidDateRangeError, "Date range cannot exceed #{MAX_RANGE_DAYS} days"
       end
     end

@@ -42,7 +42,6 @@ class Project < ApplicationRecord
 
   scope :created_in_range, ->(range) { where(created_at: range) }
   scope :completed_in_range, ->(range) { where(completed_at: range) }
-  scope :updated_in_range, ->(range) { where(updated_at: range) }
 
   def completed?
     completed_at.present?
