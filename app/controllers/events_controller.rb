@@ -41,7 +41,7 @@ class EventsController < ApplicationController
 
   def export
     ics = IcsExportService.new(@event).to_ical
-    filename = "#{@event.title.parameterize}-#{@event.starts_at.to_date}.ics"
+    filename = "#{@event.title.parameterize}-#{@event.display_starts_at.to_date}.ics"
 
     send_data ics,
       filename: filename,
@@ -93,7 +93,7 @@ class EventsController < ApplicationController
     start_date = params[:start_date] ? Date.parse(params[:start_date]) : Date.current
     end_date = start_date + 30.days
 
-    @events = current_user.events.for_date_range(start_date, end_date)
+    @events = current_user.events.for_date_range(start_date, end_date).includes(:project)
     @date_groups = group_events_by_date(@events)
     @next_start_date = end_date + 1.day
 
@@ -128,13 +128,14 @@ class EventsController < ApplicationController
   end
 
   def load_events
-    if params[:month].present?
+    events = if params[:month].present?
       year, month = params[:month].split("-").map(&:to_i)
       current_user.events.for_month(year, month)
     else
       end_date = Date.current + 30.days
       current_user.events.for_date_range(Date.current, end_date)
     end
+    events.includes(:project)
   end
 
   def group_events_by_date(events)
