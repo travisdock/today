@@ -69,6 +69,22 @@ class ProjectsController < ApplicationController
     end
   end
 
+  def reorder
+    ids = Array(params[:order]).map(&:to_i)
+    section = params[:section]
+
+    return head :unprocessable_entity if ids.empty? || section.blank?
+
+    ProjectReorderingService.new(current_user).reorder!(
+      ordered_ids: ids,
+      section: section
+    )
+
+    head :ok
+  rescue ProjectReorderingService::Error => e
+    head :unprocessable_entity
+  end
+
   private
 
   def set_project
