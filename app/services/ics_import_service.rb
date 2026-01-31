@@ -1,6 +1,6 @@
 class IcsImportService
-  Result = Struct.new(:imported, :failed, keyword_init: true)
-  PreviewResult = Struct.new(:new_events, :updated_events, :ignored_info, keyword_init: true)
+  Result = Struct.new(:imported, :failed, :error, keyword_init: true)
+  PreviewResult = Struct.new(:new_events, :updated_events, :ignored_info, :error, keyword_init: true)
 
   def initialize(user, ics_content, event_type: "personal")
     @user = user
@@ -9,7 +9,12 @@ class IcsImportService
   end
 
   def preview
-    calendars = Icalendar::Calendar.parse(@ics_content)
+    begin
+      calendars = Icalendar::Calendar.parse(@ics_content)
+    rescue StandardError => e
+      return PreviewResult.new(new_events: [], updated_events: [], ignored_info: {}, error: "Invalid ICS file: #{e.message}")
+    end
+
     new_events = []
     updated_events = []
     ignored_info = {
@@ -55,7 +60,12 @@ class IcsImportService
   end
 
   def import
-    calendars = Icalendar::Calendar.parse(@ics_content)
+    begin
+      calendars = Icalendar::Calendar.parse(@ics_content)
+    rescue StandardError => e
+      return Result.new(imported: [], failed: [], error: "Invalid ICS file: #{e.message}")
+    end
+
     imported = []
     failed = []
 

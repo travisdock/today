@@ -58,6 +58,10 @@ class EventsController < ApplicationController
     service = IcsImportService.new(current_user, ics_content)
     preview = service.preview
 
+    if preview.error
+      return render json: { error: preview.error }, status: :unprocessable_entity
+    end
+
     render json: {
       new_events: preview.new_events,
       updated_events: preview.updated_events,
@@ -74,6 +78,10 @@ class EventsController < ApplicationController
     event_type = params[:event_type] || "personal"
     service = IcsImportService.new(current_user, ics_content, event_type: event_type)
     result = service.import
+
+    if result.error
+      return redirect_to events_path, alert: result.error
+    end
 
     message = "Imported #{result.imported.count} events"
     message += ", #{result.failed.count} skipped due to errors" if result.failed.any?
