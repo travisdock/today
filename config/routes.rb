@@ -22,6 +22,9 @@ Rails.application.routes.draw do
     end
   end
   resources :projects, only: %i[index new create edit update show] do
+    collection do
+      patch :reorder
+    end
     member do
       patch :toggle_complete
     end
