@@ -187,6 +187,10 @@ class EventTest < ActiveSupport::TestCase
     past = user.events.past
 
     assert past.all? { |e| e.starts_at < Time.current }
+
+    # Verify descending order
+    past_times = past.map(&:starts_at)
+    assert_equal past_times.sort.reverse, past_times
   end
 
   test "personal scope returns only personal events" do

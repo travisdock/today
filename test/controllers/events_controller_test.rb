@@ -52,6 +52,14 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
   test "new defaults ends_at to starts_at plus one hour" do
     get new_event_url
     assert_response :success
+
+    starts_at_input = css_select("input[name='event[starts_at]']").first
+    ends_at_input = css_select("input[name='event[ends_at]']").first
+
+    starts_at = Time.zone.parse(starts_at_input["value"])
+    ends_at = Time.zone.parse(ends_at_input["value"])
+
+    assert_in_delta 1.hour, ends_at - starts_at, 1.minute
   end
 
   # Create
