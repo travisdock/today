@@ -175,9 +175,18 @@ class ActivityService
   end
 
   # Data fetching methods (memoized)
+  #
+  # Note on archived vs completed projects:
+  # - completed_at: Project is finished but still visible in the app
+  # - archived_at: Project was "deleted" by user (soft-delete), hidden from all views
+  #
+  # All queries below exclude archived projects to ensure deleted projects
+  # and their related items don't appear in activity summaries.
 
   def todos_created
     @todos_created ||= user.todos
+      .left_joins(milestone: :project)
+      .where("projects.archived_at IS NULL OR todos.milestone_id IS NULL")
       .includes(milestone: :project)
       .created_in_range(date_range)
       .order(created_at: :desc)
@@ -185,6 +194,8 @@ class ActivityService
 
   def todos_completed
     @todos_completed ||= user.todos
+      .left_joins(milestone: :project)
+      .where("projects.archived_at IS NULL OR todos.milestone_id IS NULL")
       .includes(milestone: :project)
       .completed_in_range(date_range)
       .order(completed_at: :desc)
@@ -207,7 +218,7 @@ class ActivityService
   def milestones_created
     @milestones_created ||= Milestone
       .joins(:project)
-      .where(projects: { user_id: user.id })
+      .where(projects: { user_id: user.id, archived_at: nil })
       .includes(:project)
       .created_in_range(date_range)
       .order(created_at: :desc)
@@ -216,7 +227,7 @@ class ActivityService
   def milestones_completed
     @milestones_completed ||= Milestone
       .joins(:project)
-      .where(projects: { user_id: user.id })
+      .where(projects: { user_id: user.id, archived_at: nil })
       .includes(:project)
       .completed_in_range(date_range)
       .order(completed_at: :desc)
@@ -224,6 +235,8 @@ class ActivityService
 
   def events_occurred
     @events_occurred ||= user.events
+      .left_joins(:project)
+      .where("projects.archived_at IS NULL OR events.project_id IS NULL")
       .includes(:project)
       .for_date_range(date_range.begin.to_date, date_range.end.to_date)
   end
@@ -231,7 +244,7 @@ class ActivityService
   def thoughts_created
     @thoughts_created ||= Thought
       .joins(:project)
-      .where(projects: { user_id: user.id })
+      .where(projects: { user_id: user.id, archived_at: nil })
       .includes(:project)
       .created_in_range(date_range)
       .order(created_at: :desc)
@@ -240,7 +253,7 @@ class ActivityService
   def resources_created
     @resources_created ||= Resource
       .joins(:project)
-      .where(projects: { user_id: user.id })
+      .where(projects: { user_id: user.id, archived_at: nil })
       .includes(:project)
       .created_in_range(date_range)
       .order(created_at: :desc)
@@ -249,7 +262,7 @@ class ActivityService
   def journal_entries_created
     @journal_entries_created ||= JournalEntry
       .joins(:project)
-      .where(projects: { user_id: user.id })
+      .where(projects: { user_id: user.id, archived_at: nil })
       .includes(:project)
       .created_in_range(date_range)
       .order(created_at: :desc)

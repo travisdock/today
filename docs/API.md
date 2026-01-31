@@ -872,3 +872,26 @@ User
 ```
 
 Todos are user-level but can be linked to a project's milestone via `milestone_id`.
+
+---
+
+## Concepts
+
+### Archived vs Completed Projects
+
+Projects have two separate states that are often confused:
+
+**Completed** (`completed_at`)
+- Project is finished but remains visible in the app
+- Appears in activity summaries and reports
+- Can be toggled via `PATCH /api/v1/projects/:id/toggle_complete`
+- Use this when work on a project is done but you want to keep it visible
+
+**Archived** (`archived_at`)
+- Project is soft-deleted and hidden from all views
+- Does NOT appear in activity summaries
+- Related items (milestones, thoughts, resources, journal entries) are also excluded from activity
+- Set via `DELETE /api/v1/projects/:id`
+- Use this when you want to remove a project from sight entirely
+
+In short: **completed = done but visible**, **archived = hidden/deleted**.
