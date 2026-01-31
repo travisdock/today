@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["fileInput", "modal", "content", "eventType", "submitButton", "form"]
+  static targets = ["fileInput", "modal", "content", "eventType", "submitButton"]
   static values = { previewUrl: String, importUrl: String }
 
   selectFile() {

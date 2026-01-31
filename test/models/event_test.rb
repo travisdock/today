@@ -62,7 +62,7 @@ class EventTest < ActiveSupport::TestCase
     user_two = users(:two)
     shared_uid = "shared-uid@today.travserve.net"
 
-    event_one = user_one.events.create!(
+    user_one.events.create!(
       title: "User one event",
       starts_at: 1.day.from_now,
       ends_at: 1.day.from_now + 1.hour,

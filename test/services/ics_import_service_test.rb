@@ -78,7 +78,7 @@ class IcsImportServiceTest < ActiveSupport::TestCase
     )
 
     service = IcsImportService.new(@user, @sample_ics)
-    result = service.import
+    service.import
 
     existing.reload
     assert_equal "Team Meeting", existing.title

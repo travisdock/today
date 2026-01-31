@@ -161,7 +161,6 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
   # Import Preview
 
   test "import_preview returns json with preview data" do
-    ics_content = file_fixture("sample.ics").read
     post import_preview_events_url, params: { file: fixture_file_upload("sample.ics", "text/calendar") }
 
     assert_response :success
