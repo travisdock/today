@@ -1,7 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["startsAt", "endsAt"]
+  static targets = ["startsAt", "endsAt", "allDay", "timeFields"]
+
+  connect() {
+    this.toggleTimeFields()
+  }
 
   updateEndTime() {
     const startsAt = this.startsAtTarget.value
@@ -13,6 +17,12 @@ export default class extends Controller {
 
     // Format as datetime-local value (YYYY-MM-DDTHH:MM)
     this.endsAtTarget.value = this.formatDateTimeLocal(endDate)
+  }
+
+  toggleTimeFields() {
+    const isAllDay = this.allDayTarget.checked
+    this.timeFieldsTarget.classList.toggle("opacity-40", isAllDay)
+    this.timeFieldsTarget.classList.toggle("pointer-events-none", isAllDay)
   }
 
   formatDateTimeLocal(date) {
