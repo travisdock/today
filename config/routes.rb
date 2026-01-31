@@ -29,9 +29,9 @@ Rails.application.routes.draw do
       patch :toggle_complete
     end
     resource :badge, only: [ :create ], controller: "project_badges"
-    resources :thoughts, only: [ :create ], controller: "project_thoughts"
-    resources :resources, only: [ :create ], controller: "project_resources"
-    resources :journal_entries, only: [ :create ], controller: "project_journal_entries"
+    resources :thoughts, only: [ :create, :destroy ], controller: "project_thoughts"
+    resources :resources, only: [ :create, :destroy ], controller: "project_resources"
+    resources :journal_entries, only: [ :create, :destroy ], controller: "project_journal_entries"
     resources :milestones, only: [ :create, :update, :destroy, :show ], controller: "project_milestones" do
       collection do
         patch :reorder

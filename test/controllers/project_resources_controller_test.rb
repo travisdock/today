@@ -104,4 +104,38 @@ class ProjectResourcesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "text/vnd.turbo-stream.html", response.media_type
     assert_includes response.body, %(<turbo-stream action="replace" target="resource_form">)
   end
+
+  test "destroys resource" do
+    resource = resources(:one)
+
+    assert_difference -> { @project.resources.count }, -1 do
+      delete project_resource_url(@project, resource)
+    end
+
+    assert_redirected_to project_url(@project)
+    assert_equal "Resource deleted.", flash[:notice]
+  end
+
+  test "destroys resource with turbo stream" do
+    resource = resources(:one)
+
+    assert_difference -> { @project.resources.count }, -1 do
+      delete project_resource_url(@project, resource), as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert_includes response.body, %(<turbo-stream action="replace" target="flash">)
+    assert_includes response.body, %(<turbo-stream action="replace" target="resources_list">)
+  end
+
+  test "prevents deleting resources on other users projects" do
+    other_resource = resources(:other_user)
+
+    assert_no_difference -> { Resource.count } do
+      delete project_resource_url(projects(:other_user), other_resource)
+    end
+
+    assert_response :not_found
+  end
 end

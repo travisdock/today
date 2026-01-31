@@ -94,4 +94,38 @@ class ProjectThoughtsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "text/vnd.turbo-stream.html", response.media_type
     assert_includes response.body, %(<turbo-stream action="replace" target="thought_form">)
   end
+
+  test "destroys thought" do
+    thought = thoughts(:one)
+
+    assert_difference -> { @project.thoughts.count }, -1 do
+      delete project_thought_url(@project, thought)
+    end
+
+    assert_redirected_to project_url(@project)
+    assert_equal "Thought deleted.", flash[:notice]
+  end
+
+  test "destroys thought with turbo stream" do
+    thought = thoughts(:one)
+
+    assert_difference -> { @project.thoughts.count }, -1 do
+      delete project_thought_url(@project, thought), as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert_includes response.body, %(<turbo-stream action="replace" target="flash">)
+    assert_includes response.body, %(<turbo-stream action="replace" target="thoughts_list">)
+  end
+
+  test "prevents deleting thoughts on other users projects" do
+    other_thought = thoughts(:other_user)
+
+    assert_no_difference -> { Thought.count } do
+      delete project_thought_url(projects(:other_user), other_thought)
+    end
+
+    assert_response :not_found
+  end
 end
