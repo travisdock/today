@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_20_232506) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_30_230011) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -53,6 +53,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_20_232506) do
     t.index ["token_prefix"], name: "index_api_tokens_on_token_prefix"
     t.index ["user_id", "revoked_at"], name: "index_api_tokens_on_user_id_and_revoked_at"
     t.index ["user_id"], name: "index_api_tokens_on_user_id"
+  end
+
+  create_table "events", force: :cascade do |t|
+    t.boolean "all_day", default: false, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.datetime "ends_at", null: false
+    t.string "event_type", default: "personal", null: false
+    t.string "location", limit: 500
+    t.integer "project_id"
+    t.datetime "starts_at", null: false
+    t.string "title", limit: 255, null: false
+    t.string "uid", limit: 255, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["project_id"], name: "index_events_on_project_id"
+    t.index ["user_id", "event_type"], name: "index_events_on_user_id_and_event_type"
+    t.index ["user_id", "starts_at"], name: "index_events_on_user_id_and_starts_at"
+    t.index ["user_id", "uid"], name: "index_events_on_user_id_and_uid", unique: true
+    t.index ["user_id"], name: "index_events_on_user_id"
   end
 
   create_table "journal_entries", force: :cascade do |t|
@@ -153,6 +173,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_20_232506) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "api_tokens", "users", on_delete: :cascade
+  add_foreign_key "events", "projects", on_delete: :nullify
+  add_foreign_key "events", "users", on_delete: :cascade
   add_foreign_key "journal_entries", "projects", on_delete: :cascade
   add_foreign_key "milestones", "projects"
   add_foreign_key "projects", "users"

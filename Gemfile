@@ -46,6 +46,9 @@ gem "ruby_llm"
 # MCP (Model Context Protocol) server for ChatGPT integration
 gem "mcp-rb", require: "mcp"
 
+# iCal (.ics) file parsing and generation for calendar events
+gem "icalendar", "~> 2.10"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

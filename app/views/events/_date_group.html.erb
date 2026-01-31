@@ -1,0 +1,10 @@
+<div class="border-t border-slate-200 pt-4 first:border-0 first:pt-0">
+  <h2 class="text-sm font-semibold text-slate-600 mb-3">
+    <%= date.strftime("%B %d") %> - <%= date.strftime("%A") %>
+  </h2>
+  <div class="space-y-2">
+    <% events.sort_by { |e| e.all_day? ? Time.at(0) : e.starts_at }.each do |event| %>
+      <%= render "event", event: event %>
+    <% end %>
+  </div>
+</div>

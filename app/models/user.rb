@@ -4,6 +4,7 @@ class User < ApplicationRecord
   has_many :api_tokens, dependent: :destroy
   has_many :todos, dependent: :destroy
   has_many :projects, dependent: :destroy
+  has_many :events, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 end

@@ -1,0 +1,56 @@
+personal_event:
+  user: one
+  project: one
+  title: Team standup
+  description: Daily sync meeting
+  location: Conference Room A
+  starts_at: <%= 1.day.from_now.beginning_of_day + 10.hours %>
+  ends_at: <%= 1.day.from_now.beginning_of_day + 11.hours %>
+  all_day: false
+  event_type: personal
+  uid: personal-event-uid@today.travserve.net
+
+reminder_event:
+  user: one
+  title: Sarah's hair appointment
+  starts_at: <%= 2.days.from_now.beginning_of_day + 15.hours %>
+  ends_at: <%= 2.days.from_now.beginning_of_day + 16.hours %>
+  all_day: false
+  event_type: reminder
+  uid: reminder-event-uid@today.travserve.net
+
+all_day_event:
+  user: one
+  title: Company holiday
+  starts_at: <%= 3.days.from_now.beginning_of_day %>
+  ends_at: <%= 3.days.from_now.beginning_of_day %>
+  all_day: true
+  event_type: personal
+  uid: all-day-event-uid@today.travserve.net
+
+past_event:
+  user: one
+  title: Past meeting
+  starts_at: <%= 5.days.ago.beginning_of_day + 14.hours %>
+  ends_at: <%= 5.days.ago.beginning_of_day + 15.hours %>
+  all_day: false
+  event_type: personal
+  uid: past-event-uid@today.travserve.net
+
+other_user_event:
+  user: two
+  title: Their event
+  starts_at: <%= 1.day.from_now.beginning_of_day + 9.hours %>
+  ends_at: <%= 1.day.from_now.beginning_of_day + 10.hours %>
+  all_day: false
+  event_type: personal
+  uid: other-user-event-uid@today.travserve.net
+
+multi_day_event:
+  user: one
+  title: Conference trip
+  starts_at: <%= 5.days.from_now.beginning_of_day %>
+  ends_at: <%= 7.days.from_now.beginning_of_day %>
+  all_day: true
+  event_type: personal
+  uid: multi-day-event-uid@today.travserve.net

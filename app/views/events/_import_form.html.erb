@@ -1,0 +1,78 @@
+<div data-controller="import-preview"
+     data-import-preview-preview-url-value="<%= import_preview_events_path %>"
+     data-import-preview-import-url-value="<%= import_events_path %>">
+
+  <%# Trigger button %>
+  <button type="button"
+          data-action="click->import-preview#selectFile"
+          class="cursor-pointer rounded-2xl bg-slate-200 px-3 sm:px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300 transition inline-flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+    </svg>
+    <span class="hidden sm:inline">Import</span>
+  </button>
+
+  <%# Hidden file input %>
+  <input type="file"
+         data-import-preview-target="fileInput"
+         data-action="change->import-preview#fileSelected"
+         accept=".ics,text/calendar"
+         class="hidden">
+
+  <%# Modal %>
+  <div data-import-preview-target="modal"
+       class="hidden fixed inset-0 z-50 overflow-y-auto"
+       aria-modal="true">
+    <%# Backdrop %>
+    <div class="fixed inset-0 bg-black/50 transition-opacity"
+         data-action="click->import-preview#cancel"></div>
+
+    <%# Modal panel %>
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative w-full max-w-lg rounded-2xl bg-white shadow-xl">
+        <%# Header %>
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <h2 class="text-lg font-semibold text-slate-900">Import Preview</h2>
+          <button type="button"
+                  data-action="click->import-preview#cancel"
+                  class="text-slate-400 hover:text-slate-600 transition">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <%# Content %>
+        <div data-import-preview-target="content" class="px-6 py-4 max-h-96 overflow-y-auto">
+          <p class="text-center text-slate-500 py-8">Analyzing file...</p>
+        </div>
+
+        <%# Footer %>
+        <div class="flex items-center justify-between border-t border-slate-200 px-6 py-4">
+          <div class="flex items-center gap-2">
+            <label for="import_event_type" class="text-sm text-slate-600">Import as:</label>
+            <select id="import_event_type"
+                    data-import-preview-target="eventType"
+                    class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/30">
+              <option value="personal">Personal Event</option>
+              <option value="reminder">Reminder</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button"
+                    data-action="click->import-preview#cancel"
+                    class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition">
+              Cancel
+            </button>
+            <button type="button"
+                    data-import-preview-target="submitButton"
+                    data-action="click->import-preview#submit"
+                    class="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-blue-500">
+              Proceed with Import
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

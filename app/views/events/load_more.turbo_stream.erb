@@ -1,0 +1,14 @@
+<%= turbo_stream.append "event_list" do %>
+  <% @date_groups.sort.each do |date, events| %>
+    <%= render "date_group", date: date, events: events %>
+  <% end %>
+<% end %>
+
+<%= turbo_stream.replace "load_more_link" do %>
+  <div id="load_more_link" class="mt-6 text-center">
+    <%= link_to "Load next 30 days",
+          load_more_events_path(start_date: @next_start_date.to_s),
+          data: { turbo_stream: true },
+          class: "text-sm text-blue-600 hover:text-blue-800 transition" %>
+  </div>
+<% end %>
