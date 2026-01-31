@@ -14,8 +14,8 @@ class CreateEvents < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :events, [:user_id, :starts_at]
-    add_index :events, [:user_id, :event_type]
-    add_index :events, [:user_id, :uid], unique: true
+    add_index :events, [ :user_id, :starts_at ]
+    add_index :events, [ :user_id, :event_type ]
+    add_index :events, [ :user_id, :uid ], unique: true
   end
 end
