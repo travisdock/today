@@ -59,6 +59,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       get "docs", to: "docs#show"
       get "trmnl/dashboard", to: "trmnl#dashboard"
+      get "activity", to: "activity#show"
 
       resources :projects do
         member do

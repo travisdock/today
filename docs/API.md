@@ -20,7 +20,7 @@ Requests with insufficient scope return `403 Forbidden`.
 ## Base URL
 
 ```
-https://your-domain.com/api/v1
+https://today.travserve.net/api/v1
 ```
 
 ## Rate Limiting
@@ -344,6 +344,177 @@ Returns a summary of todos completed during the current week (Monday to Sunday),
 
 ---
 
+### Activity
+
+Query comprehensive activity data across all models for any time period. Designed for AI agents to summarize productivity.
+
+#### Get Activity
+
+```
+GET /api/v1/activity
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `period` | string | `this_week` | Named period (see values below) |
+| `start_date` | date | - | Custom range start (ISO 8601: `2025-01-01`) |
+| `end_date` | date | - | Custom range end (ISO 8601: `2025-01-31`) |
+| `include` | string | all | Comma-separated filter (see values below) |
+
+**Period values:** `this_week`, `last_week`, `this_month`, `last_month`, `this_quarter`, `last_quarter`, `this_year`, `last_year`
+
+**Include values:** `todos`, `projects`, `milestones`, `events`, `thoughts`, `resources`, `journal_entries`
+
+**Rules:**
+- If `period` is provided, `start_date` and `end_date` are ignored
+- Custom date range cannot exceed 366 days
+- Requires `read` scope
+
+**Response:**
+```json
+{
+  "period": {
+    "name": "this_week",
+    "start_date": "2026-01-26T00:00:00Z",
+    "end_date": "2026-02-01T23:59:59Z"
+  },
+  "summary": {
+    "todos_created": 15,
+    "todos_completed": 12,
+    "projects_created": 2,
+    "projects_completed": 1,
+    "milestones_created": 3,
+    "milestones_completed": 2,
+    "events_occurred": 8,
+    "thoughts_created": 5,
+    "resources_created": 3,
+    "journal_entries_created": 4
+  },
+  "todos": {
+    "created": [
+      {
+        "id": 1,
+        "title": "Implement feature X",
+        "priority_window": "today",
+        "completed": false,
+        "created_at": "2026-01-27T10:00:00Z",
+        "completed_at": null,
+        "milestone": { "id": 1, "name": "Phase 1" },
+        "project": { "id": 1, "name": "Project Alpha" }
+      }
+    ],
+    "completed": [
+      {
+        "id": 2,
+        "title": "Review PR",
+        "priority_window": "today",
+        "completed": true,
+        "created_at": "2026-01-25T09:00:00Z",
+        "completed_at": "2026-01-27T14:30:00Z",
+        "milestone": { "id": 1, "name": "Phase 1" },
+        "project": { "id": 1, "name": "Project Alpha" }
+      }
+    ]
+  },
+  "projects": {
+    "created": [
+      {
+        "id": 1,
+        "name": "Project Alpha",
+        "description": "New initiative",
+        "section": "this_month",
+        "created_at": "2026-01-27T08:00:00Z",
+        "completed_at": null
+      }
+    ],
+    "completed": []
+  },
+  "milestones": {
+    "created": [
+      {
+        "id": 1,
+        "name": "Phase 1",
+        "description": "Initial phase",
+        "position": 1,
+        "created_at": "2026-01-27T09:00:00Z",
+        "completed_at": null,
+        "project": { "id": 1, "name": "Project Alpha" }
+      }
+    ],
+    "completed": []
+  },
+  "events": {
+    "occurred": [
+      {
+        "id": 1,
+        "title": "Team Standup",
+        "description": null,
+        "starts_at": "2026-01-27T09:00:00Z",
+        "ends_at": "2026-01-27T09:30:00Z",
+        "all_day": false,
+        "event_type": "personal",
+        "project": null
+      }
+    ]
+  },
+  "thoughts": [
+    {
+      "id": 1,
+      "content": "Consider using Redis for caching",
+      "created_at": "2026-01-27T11:00:00Z",
+      "project": { "id": 1, "name": "Project Alpha" }
+    }
+  ],
+  "resources": [
+    {
+      "id": 1,
+      "url": "https://example.com/docs",
+      "content": "API documentation",
+      "created_at": "2026-01-27T12:00:00Z",
+      "project": { "id": 1, "name": "Project Alpha" }
+    }
+  ],
+  "journal_entries": [
+    {
+      "id": 1,
+      "content": "Made good progress on the API today...",
+      "created_at": "2026-01-27T17:00:00Z",
+      "project": { "id": 1, "name": "Project Alpha" }
+    }
+  ],
+  "generated_at": "2026-01-31T10:00:00Z"
+}
+```
+
+**Examples:**
+
+```bash
+# Get this week's activity (default)
+curl -H "Authorization: Bearer $TOKEN" \
+  https://today.travserve.net/api/v1/activity
+
+# Get last month's activity
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://today.travserve.net/api/v1/activity?period=last_month"
+
+# Get Q4 2025 activity with custom date range
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://today.travserve.net/api/v1/activity?start_date=2025-10-01&end_date=2025-12-31"
+
+# Get only todos and projects for this quarter
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://today.travserve.net/api/v1/activity?period=this_quarter&include=todos,projects"
+```
+
+**Notes:**
+- Items include cross-references (`milestone` and `project` info) for full context
+- `summary` provides quick counts without needing to iterate through arrays
+- Use `include` to reduce response size when only specific data types are needed
+
+---
+
 ### Milestones
 
 Milestones belong to projects and can have todos linked to them.
@@ -632,7 +803,7 @@ DELETE /api/v1/projects/:project_id/journal_entries/:id
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
-  https://app.example.com/api/v1/todos
+  https://today.travserve.net/api/v1/todos
 ```
 
 ### 2. Create a todo for the user
@@ -642,14 +813,14 @@ curl -X POST \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"todo":{"title":"Review PR #123","priority_window":"today"}}' \
-  https://app.example.com/api/v1/todos
+  https://today.travserve.net/api/v1/todos
 ```
 
 ### 3. Get projects overview
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
-  https://app.example.com/api/v1/projects
+  https://today.travserve.net/api/v1/projects
 ```
 
 ### 4. Add a thought to a project
@@ -659,7 +830,7 @@ curl -X POST \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"thought":{"content":"Consider using Redis for caching"}}' \
-  https://app.example.com/api/v1/projects/1/thoughts
+  https://today.travserve.net/api/v1/projects/1/thoughts
 ```
 
 ### 5. Mark a todo complete
@@ -667,7 +838,21 @@ curl -X POST \
 ```bash
 curl -X PATCH \
   -H "Authorization: Bearer $TOKEN" \
-  https://app.example.com/api/v1/todos/1/complete
+  https://today.travserve.net/api/v1/todos/1/complete
+```
+
+### 6. Summarize last week's activity
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://today.travserve.net/api/v1/activity?period=last_week"
+```
+
+### 7. Get monthly summary for AI analysis
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://today.travserve.net/api/v1/activity?period=last_month"
 ```
 
 ---
@@ -687,3 +872,26 @@ User
 ```
 
 Todos are user-level but can be linked to a project's milestone via `milestone_id`.
+
+---
+
+## Concepts
+
+### Archived vs Completed Projects
+
+Projects have two separate states that are often confused:
+
+**Completed** (`completed_at`)
+- Project is finished but remains visible in the app
+- Appears in activity summaries and reports
+- Can be toggled via `PATCH /api/v1/projects/:id/toggle_complete`
+- Use this when work on a project is done but you want to keep it visible
+
+**Archived** (`archived_at`)
+- Project is soft-deleted and hidden from all views
+- Does NOT appear in activity summaries
+- Related items (milestones, thoughts, resources, journal entries) are also excluded from activity
+- Set via `DELETE /api/v1/projects/:id`
+- Use this when you want to remove a project from sight entirely
+
+In short: **completed = done but visible**, **archived = hidden/deleted**.

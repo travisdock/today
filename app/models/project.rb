@@ -40,6 +40,9 @@ class Project < ApplicationRecord
   scope :recently_completed, -> { unarchived.where.not(completed_at: nil).where("completed_at > ?", 30.days.ago) }
   scope :ordered, -> { order(Arel.sql(SECTION_ORDER_SQL)).order(created_at: :desc) }
 
+  scope :created_in_range, ->(range) { where(created_at: range) }
+  scope :completed_in_range, ->(range) { where(completed_at: range) }
+
   def completed?
     completed_at.present?
   end
