@@ -20,7 +20,7 @@ Requests with insufficient scope return `403 Forbidden`.
 ## Base URL
 
 ```
-https://your-domain.com/api/v1
+https://today.travserve.net/api/v1
 ```
 
 ## Rate Limiting
@@ -493,19 +493,19 @@ GET /api/v1/activity
 ```bash
 # Get this week's activity (default)
 curl -H "Authorization: Bearer $TOKEN" \
-  https://app.example.com/api/v1/activity
+  https://today.travserve.net/api/v1/activity
 
 # Get last month's activity
 curl -H "Authorization: Bearer $TOKEN" \
-  "https://app.example.com/api/v1/activity?period=last_month"
+  "https://today.travserve.net/api/v1/activity?period=last_month"
 
 # Get Q4 2025 activity with custom date range
 curl -H "Authorization: Bearer $TOKEN" \
-  "https://app.example.com/api/v1/activity?start_date=2025-10-01&end_date=2025-12-31"
+  "https://today.travserve.net/api/v1/activity?start_date=2025-10-01&end_date=2025-12-31"
 
 # Get only todos and projects for this quarter
 curl -H "Authorization: Bearer $TOKEN" \
-  "https://app.example.com/api/v1/activity?period=this_quarter&include=todos,projects"
+  "https://today.travserve.net/api/v1/activity?period=this_quarter&include=todos,projects"
 ```
 
 **Notes:**
@@ -803,7 +803,7 @@ DELETE /api/v1/projects/:project_id/journal_entries/:id
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
-  https://app.example.com/api/v1/todos
+  https://today.travserve.net/api/v1/todos
 ```
 
 ### 2. Create a todo for the user
@@ -813,14 +813,14 @@ curl -X POST \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"todo":{"title":"Review PR #123","priority_window":"today"}}' \
-  https://app.example.com/api/v1/todos
+  https://today.travserve.net/api/v1/todos
 ```
 
 ### 3. Get projects overview
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
-  https://app.example.com/api/v1/projects
+  https://today.travserve.net/api/v1/projects
 ```
 
 ### 4. Add a thought to a project
@@ -830,7 +830,7 @@ curl -X POST \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"thought":{"content":"Consider using Redis for caching"}}' \
-  https://app.example.com/api/v1/projects/1/thoughts
+  https://today.travserve.net/api/v1/projects/1/thoughts
 ```
 
 ### 5. Mark a todo complete
@@ -838,21 +838,21 @@ curl -X POST \
 ```bash
 curl -X PATCH \
   -H "Authorization: Bearer $TOKEN" \
-  https://app.example.com/api/v1/todos/1/complete
+  https://today.travserve.net/api/v1/todos/1/complete
 ```
 
 ### 6. Summarize last week's activity
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
-  "https://app.example.com/api/v1/activity?period=last_week"
+  "https://today.travserve.net/api/v1/activity?period=last_week"
 ```
 
 ### 7. Get monthly summary for AI analysis
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
-  "https://app.example.com/api/v1/activity?period=last_month"
+  "https://today.travserve.net/api/v1/activity?period=last_month"
 ```
 
 ---
