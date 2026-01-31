@@ -16,7 +16,7 @@ class Event < ApplicationRecord
   scope :upcoming, -> { where("starts_at >= ?", Time.current).order(:starts_at) }
   scope :past, -> { where("starts_at < ?", Time.current).order(starts_at: :desc) }
   scope :for_date_range, ->(start_date, end_date) {
-    where("DATE(starts_at) >= ? AND DATE(starts_at) <= ?", start_date, end_date).order(:starts_at)
+    where("DATE(starts_at) <= ? AND DATE(ends_at) >= ?", end_date, start_date).order(:starts_at)
   }
   scope :for_month, ->(year, month) {
     start_of_month = Date.new(year, month, 1)
@@ -31,6 +31,12 @@ class Event < ApplicationRecord
 
   def display_ends_at
     all_day? ? ends_at.utc.to_date : ends_at.in_time_zone
+  end
+
+  def spanned_dates
+    start_date = display_starts_at.to_date
+    end_date = display_ends_at.to_date
+    (start_date..end_date).to_a
   end
 
   private

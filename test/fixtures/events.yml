@@ -45,3 +45,12 @@ other_user_event:
   all_day: false
   event_type: personal
   uid: other-user-event-uid@today.travserve.net
+
+multi_day_event:
+  user: one
+  title: Conference trip
+  starts_at: <%= 5.days.from_now.beginning_of_day %>
+  ends_at: <%= 7.days.from_now.beginning_of_day %>
+  all_day: true
+  event_type: personal
+  uid: multi-day-event-uid@today.travserve.net

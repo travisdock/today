@@ -130,6 +130,14 @@ class EventsController < ApplicationController
   end
 
   def group_events_by_date(events)
-    events.group_by { |e| e.display_starts_at.to_date }
+    groups = Hash.new { |h, k| h[k] = [] }
+
+    events.each do |event|
+      event.spanned_dates.each do |date|
+        groups[date] << event
+      end
+    end
+
+    groups
   end
 end

@@ -212,9 +212,23 @@ class EventTest < ActiveSupport::TestCase
     events = user.events.for_date_range(start_date, end_date)
 
     events.each do |event|
-      assert event.starts_at.to_date >= start_date
+      # Event must overlap with the range (start before range ends, end after range starts)
       assert event.starts_at.to_date <= end_date
+      assert event.ends_at.to_date >= start_date
     end
+  end
+
+  test "for_date_range includes multi-day events that extend into range" do
+    user = users(:one)
+    multi_day = events(:multi_day_event)
+
+    # Query a range that starts in the middle of the multi-day event
+    start_date = multi_day.starts_at.to_date + 1.day
+    end_date = start_date + 1.day
+
+    events = user.events.for_date_range(start_date, end_date)
+
+    assert_includes events, multi_day
   end
 
   test "for_month returns events for specific month" do
@@ -253,5 +267,31 @@ class EventTest < ActiveSupport::TestCase
   test "display_ends_at returns datetime for timed events" do
     event = events(:personal_event)
     assert_instance_of ActiveSupport::TimeWithZone, event.display_ends_at
+  end
+
+  # Spanned dates
+
+  test "spanned_dates returns single date for single-day event" do
+    event = events(:all_day_event)
+    dates = event.spanned_dates
+
+    assert_equal 1, dates.count
+    assert_equal event.display_starts_at.to_date, dates.first
+  end
+
+  test "spanned_dates returns all dates for multi-day event" do
+    event = events(:multi_day_event)
+    dates = event.spanned_dates
+
+    assert_equal 3, dates.count
+    assert_equal event.display_starts_at.to_date, dates.first
+    assert_equal event.display_ends_at.to_date, dates.last
+  end
+
+  test "spanned_dates returns single date for timed event on same day" do
+    event = events(:personal_event)
+    dates = event.spanned_dates
+
+    assert_equal 1, dates.count
   end
 end

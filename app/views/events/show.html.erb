@@ -16,8 +16,13 @@
         <dt class="font-medium text-slate-500">When</dt>
         <dd class="text-slate-900">
           <% if @event.all_day? %>
-            <%= @event.display_starts_at.strftime("%B %d, %Y") %>
-            <span class="text-slate-500">(All day)</span>
+            <% if @event.display_starts_at == @event.display_ends_at %>
+              <%= @event.display_starts_at.strftime("%B %d, %Y") %>
+              <span class="text-slate-500">(All day)</span>
+            <% else %>
+              <%= @event.display_starts_at.strftime("%B %d") %> - <%= @event.display_ends_at.strftime("%B %d, %Y") %>
+              <span class="text-slate-500">(<%= @event.spanned_dates.count %> days)</span>
+            <% end %>
           <% else %>
             <%= @event.display_starts_at.strftime("%B %d, %Y at %l:%M %p") %>
             <% if @event.display_ends_at.to_date == @event.display_starts_at.to_date %>
