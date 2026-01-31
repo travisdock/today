@@ -23,19 +23,24 @@ export default class extends Controller {
     const isAllDay = this.allDayTarget.checked
 
     if (isAllDay) {
-      // Convert datetime-local to date
+      // Save values before changing type (browsers clear value when type changes)
+      const startValue = this.extractDate(this.startsAtTarget.value)
+      const endValue = this.extractDate(this.endsAtTarget.value)
       this.startsAtTarget.type = "date"
       this.endsAtTarget.type = "date"
-      this.startsAtTarget.value = this.extractDate(this.startsAtTarget.value)
-      this.endsAtTarget.value = this.extractDate(this.endsAtTarget.value)
+      this.startsAtTarget.value = startValue
+      this.endsAtTarget.value = endValue
     } else {
-      // Convert date to datetime-local
-      const startDate = this.startsAtTarget.value
-      const endDate = this.endsAtTarget.value
-      this.startsAtTarget.type = "datetime-local"
-      this.endsAtTarget.type = "datetime-local"
-      if (startDate) this.startsAtTarget.value = `${startDate}T09:00`
-      if (endDate) this.endsAtTarget.value = `${endDate}T10:00`
+      // Only add default times when converting from date to datetime-local
+      // (i.e., when unchecking "All day"), not on initial page load
+      if (this.startsAtTarget.type === "date") {
+        const startDate = this.extractDate(this.startsAtTarget.value)
+        const endDate = this.extractDate(this.endsAtTarget.value)
+        this.startsAtTarget.type = "datetime-local"
+        this.endsAtTarget.type = "datetime-local"
+        if (startDate) this.startsAtTarget.value = `${startDate}T09:00`
+        if (endDate) this.endsAtTarget.value = `${endDate}T10:00`
+      }
     }
   }
 

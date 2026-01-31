@@ -33,6 +33,17 @@ class Event < ApplicationRecord
     all_day? ? ends_at.utc.to_date : ends_at.in_time_zone
   end
 
+  # For form inputs: all-day events need UTC to prevent date shift from timezone conversion
+  def starts_at_for_form
+    return nil unless starts_at
+    all_day? ? starts_at.utc : starts_at.in_time_zone
+  end
+
+  def ends_at_for_form
+    return nil unless ends_at
+    all_day? ? ends_at.utc : ends_at.in_time_zone
+  end
+
   def spanned_dates
     start_date = display_starts_at.to_date
     end_date = display_ends_at.to_date
