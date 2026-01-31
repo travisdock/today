@@ -94,4 +94,38 @@ class ProjectJournalEntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "text/vnd.turbo-stream.html", response.media_type
     assert_includes response.body, %(<turbo-stream action="replace" target="journal_entry_form">)
   end
+
+  test "destroys journal entry" do
+    journal_entry = journal_entries(:one)
+
+    assert_difference -> { @project.journal_entries.count }, -1 do
+      delete project_journal_entry_url(@project, journal_entry)
+    end
+
+    assert_redirected_to project_url(@project)
+    assert_equal "Journal entry deleted.", flash[:notice]
+  end
+
+  test "destroys journal entry with turbo stream" do
+    journal_entry = journal_entries(:one)
+
+    assert_difference -> { @project.journal_entries.count }, -1 do
+      delete project_journal_entry_url(@project, journal_entry), as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert_includes response.body, %(<turbo-stream action="replace" target="flash">)
+    assert_includes response.body, %(<turbo-stream action="replace" target="journal_entries_list">)
+  end
+
+  test "prevents deleting journal entries on other users projects" do
+    other_entry = journal_entries(:other_user)
+
+    assert_no_difference -> { JournalEntry.count } do
+      delete project_journal_entry_url(projects(:other_user), other_entry)
+    end
+
+    assert_response :not_found
+  end
 end

@@ -1,5 +1,6 @@
 class ProjectResourcesController < ApplicationController
   before_action :set_project
+  before_action :set_resource, only: :destroy
 
   def create
     @resource = @project.resources.build(resource_params)
@@ -33,10 +34,31 @@ class ProjectResourcesController < ApplicationController
     end
   end
 
+  def destroy
+    @resource.destroy!
+    flash.now[:notice] = "Resource deleted."
+
+    respond_to do |format|
+      format.turbo_stream do
+        resources = @project.resources.last_two
+        render turbo_stream: [
+          turbo_stream.replace("flash", partial: "shared/flash"),
+          turbo_stream.replace("resources_list", partial: "projects/resources/list",
+                               locals: { resources: resources })
+        ]
+      end
+      format.html { redirect_to project_path(@project), notice: "Resource deleted." }
+    end
+  end
+
   private
 
   def set_project
     @project = current_user.projects.find(params[:project_id])
+  end
+
+  def set_resource
+    @resource = @project.resources.find(params[:id])
   end
 
   def resource_params
