@@ -37,14 +37,14 @@
       <% if @event.location.present? %>
         <div>
           <dt class="font-medium text-slate-500">Location</dt>
-          <dd class="text-slate-900"><%= @event.location %></dd>
+          <dd class="text-slate-900 break-words"><%= @event.location %></dd>
         </div>
       <% end %>
 
       <% if @event.description.present? %>
         <div>
           <dt class="font-medium text-slate-500">Description</dt>
-          <dd class="text-slate-900 whitespace-pre-wrap"><%= @event.description %></dd>
+          <dd class="text-slate-900 whitespace-pre-wrap break-words"><%= @event.description %></dd>
         </div>
       <% end %>
 
