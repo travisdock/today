@@ -87,6 +87,8 @@ Rails.application.routes.draw do
           patch :move
         end
       end
+
+      resources :events, only: :index
     end
   end
 
