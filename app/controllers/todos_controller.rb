@@ -206,7 +206,9 @@ class TodosController < ApplicationController
     end
 
     def todo_params
-      params.require(:todo).permit(:title, :notes)
+      permitted = [ :title, :notes ]
+      permitted << :priority_window if action_name == "create"
+      params.require(:todo).permit(*permitted)
     end
 
     def completed_count_html
