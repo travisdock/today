@@ -26,6 +26,7 @@ class Todo < ApplicationRecord
   before_validation :normalize_title
 
   validates :title, presence: true, length: { maximum: 255 }
+  validates :notes, length: { maximum: 5000 }
   validates :priority_window, presence: true
   validate :milestone_belongs_to_same_user, if: :milestone_id?
 

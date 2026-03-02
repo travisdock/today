@@ -15,7 +15,9 @@
         </svg>
       </button>
       <div class="min-w-0">
-        <p class="text-base font-medium text-slate-900"><%= todo.title %></p>
+        <p class="text-base font-medium text-slate-900">
+          <%= link_to todo.title, todo_path(todo), class: "hover:text-blue-600 transition" %>
+        </p>
         <% if todo.milestone && local_assigns.fetch(:show_milestone_label, true) %>
           <%= link_to project_milestone_path(todo.milestone.project, todo.milestone),
                 class: "inline-flex items-center gap-1 mt-1 text-xs text-blue-600 hover:text-blue-800 transition" do %>
@@ -24,6 +26,12 @@
             </svg>
             <%= todo.milestone.name %> for <%= todo.milestone.project.name %>
           <% end %>
+        <% end %>
+        <% if todo.notes.present? %>
+          <details class="mt-2">
+            <summary class="cursor-pointer text-xs font-medium text-slate-500 hover:text-slate-700 transition select-none">Notes</summary>
+            <p class="mt-1 text-sm text-slate-600 whitespace-pre-wrap break-words"><%= todo.notes %></p>
+          </details>
         <% end %>
       </div>
     </div>
@@ -73,7 +81,9 @@
 <% else %>
   <li id="<%= dom_id(todo) %>" data-id="<%= todo.id %>" class="flex flex-col gap-3 rounded-2xl border border-slate-200/60 bg-white px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
     <div class="sm:min-w-0">
-      <p class="font-medium text-slate-800"><%= todo.title %></p>
+      <p class="font-medium text-slate-800">
+        <%= link_to todo.title, todo_path(todo), class: "hover:text-blue-600 transition" %>
+      </p>
       <% if todo.milestone && local_assigns.fetch(:show_milestone_label, true) %>
         <%= link_to project_milestone_path(todo.milestone.project, todo.milestone),
               class: "inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition" do %>
@@ -82,6 +92,12 @@
           </svg>
           <%= todo.milestone.name %> for <%= todo.milestone.project.name %>
         <% end %>
+      <% end %>
+      <% if todo.notes.present? %>
+        <details class="mt-1">
+          <summary class="cursor-pointer text-xs font-medium text-slate-500 hover:text-slate-700 transition select-none">Notes</summary>
+          <p class="mt-1 text-sm text-slate-600 whitespace-pre-wrap break-words"><%= todo.notes %></p>
+        </details>
       <% end %>
       <p class="text-slate-500"><%= local_time(todo.completed_at, format: :weekdayWithTime) %></p>
     </div>

@@ -2,7 +2,7 @@ Rails.application.routes.draw do
   resource :session
   resources :users, only: %i[new create show]
   resources :api_tokens, only: %i[index create destroy]
-  resources :todos, only: %i[index create destroy] do
+  resources :todos, only: %i[index create destroy show edit update] do
     collection do
       patch :reorder
     end

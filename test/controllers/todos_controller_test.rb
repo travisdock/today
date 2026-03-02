@@ -107,6 +107,60 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "shows todo" do
+    todo = todos(:today_one)
+    get todo_url(todo)
+    assert_response :success
+    assert_match todo.title, response.body
+  end
+
+  test "prevents showing other users todos" do
+    get todo_url(todos(:other_user))
+    assert_response :not_found
+  end
+
+  test "shows edit page" do
+    todo = todos(:today_one)
+    get edit_todo_url(todo)
+    assert_response :success
+  end
+
+  test "updates todo" do
+    todo = todos(:today_one)
+    patch todo_url(todo), params: { todo: { title: "Updated title", notes: "Some notes" } }
+    assert_redirected_to todo_url(todo)
+
+    todo.reload
+    assert_equal "Updated title", todo.title
+    assert_equal "Some notes", todo.notes
+  end
+
+  test "update persists notes" do
+    todo = todos(:today_one)
+    assert_nil todo.notes
+
+    patch todo_url(todo), params: { todo: { title: todo.title, notes: "My detailed notes" } }
+    assert_redirected_to todo_url(todo)
+    assert_equal "My detailed notes", todo.reload.notes
+  end
+
+  test "update renders edit with 422 on validation error" do
+    todo = todos(:today_one)
+    patch todo_url(todo), params: { todo: { title: "" } }
+
+    assert_response :unprocessable_entity
+  end
+
+  test "prevents updating other users todos" do
+    patch todo_url(todos(:other_user)), params: { todo: { title: "Hacked" } }
+    assert_response :not_found
+  end
+
+  test "prevents editing other users todos" do
+    get edit_todo_url(todos(:other_user))
+    assert_response :not_found
+  end
+
   test "complete responds with turbo stream" do
     todo = todos(:today_one)
 

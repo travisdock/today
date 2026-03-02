@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_31_221532) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_02_023429) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -148,6 +148,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_31_221532) do
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.integer "milestone_id"
+    t.text "notes"
     t.integer "position", default: 0, null: false
     t.string "priority_window", default: "today", null: false
     t.string "title", limit: 255, null: false

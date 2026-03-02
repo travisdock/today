@@ -53,6 +53,7 @@ class WeekReviewService
     {
       id: todo.id,
       title: todo.title,
+      notes: todo.notes,
       completed_at: todo.completed_at.iso8601,
       milestone: format_milestone(todo.milestone),
       project: format_project(todo.milestone&.project)
