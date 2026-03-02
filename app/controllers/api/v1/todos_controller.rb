@@ -71,7 +71,7 @@ module Api
       private
 
       def todo_params
-        params.require(:todo).permit(:title, :priority_window, :milestone_id)
+        params.require(:todo).permit(:title, :priority_window, :milestone_id, :notes)
       end
 
       def move_params
@@ -82,6 +82,7 @@ module Api
         {
           id: todo.id,
           title: todo.title,
+          notes: todo.notes,
           priority_window: todo.priority_window,
           position: todo.position,
           completed: todo.completed?,
