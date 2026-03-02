@@ -344,6 +344,68 @@ Returns a summary of todos completed during the current week (Monday to Sunday),
 
 ---
 
+### Events
+
+Calendar events for a date range.
+
+#### List Events
+
+```
+GET /api/v1/events?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+```
+
+Returns events that overlap with the given date range, ordered by `starts_at`.
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `start_date` | date | Yes | Range start (ISO 8601: `2026-03-01`) |
+| `end_date` | date | Yes | Range end (ISO 8601: `2026-03-31`) |
+
+**Rules:**
+- Both `start_date` and `end_date` are required
+- `end_date` must be on or after `start_date`
+- Date range cannot exceed 366 days
+- Requires `read` scope
+
+**Response:**
+```json
+{
+  "events": [
+    {
+      "id": 1,
+      "title": "Team standup",
+      "description": "Daily sync meeting",
+      "location": "Conference Room A",
+      "starts_at": "2026-03-02T10:00:00Z",
+      "ends_at": "2026-03-02T11:00:00Z",
+      "all_day": false,
+      "event_type": "personal",
+      "project_id": 1,
+      "created_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-01-11T10:00:00Z"
+    }
+  ]
+}
+```
+
+**Event type values:** `personal`, `reminder`
+
+**Examples:**
+
+```bash
+# Get this week's events
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://today.travserve.net/api/v1/events?start_date=2026-03-02&end_date=2026-03-08"
+
+# Get this month's events
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://today.travserve.net/api/v1/events?start_date=2026-03-01&end_date=2026-03-31"
+```
+
+---
+
 ### Activity
 
 Query comprehensive activity data across all models for any time period. Designed for AI agents to summarize productivity.
