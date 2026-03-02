@@ -107,6 +107,18 @@ class TodosControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "shows todo" do
+    todo = todos(:today_one)
+    get todo_url(todo)
+    assert_response :success
+    assert_match todo.title, response.body
+  end
+
+  test "prevents showing other users todos" do
+    get todo_url(todos(:other_user))
+    assert_response :not_found
+  end
+
   test "shows edit page" do
     todo = todos(:today_one)
     get edit_todo_url(todo)

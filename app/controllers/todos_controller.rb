@@ -206,7 +206,7 @@ class TodosController < ApplicationController
     end
 
     def todo_params
-      params.require(:todo).permit(:title, :priority_window, :notes)
+      params.require(:todo).permit(:title, :notes)
     end
 
     def completed_count_html
