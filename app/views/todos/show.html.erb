@@ -1,0 +1,57 @@
+<% content_for :main_class, "flex flex-1 justify-center px-4 py-5 sm:px-6 lg:px-8" %>
+
+<div class="w-full max-w-lg space-y-4">
+  <%= render "shared/flash" %>
+
+  <section class="rounded-3xl border border-white/30 bg-white/70 p-6 shadow-lg backdrop-blur">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-xl font-semibold text-slate-900"><%= @todo.title %></h1>
+      <span class="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+        <%= @todo.priority_window.titleize %>
+      </span>
+    </div>
+
+    <dl class="space-y-3 text-sm">
+      <% if @todo.notes.present? %>
+        <div>
+          <dt class="font-medium text-slate-500">Notes</dt>
+          <dd class="text-slate-900 whitespace-pre-wrap break-words"><%= @todo.notes %></dd>
+        </div>
+      <% end %>
+
+      <% if @todo.milestone %>
+        <div>
+          <dt class="font-medium text-slate-500">Milestone</dt>
+          <dd class="text-slate-900">
+            <%= link_to project_milestone_path(@todo.milestone.project, @todo.milestone),
+                  class: "text-blue-600 hover:text-blue-800 transition" do %>
+              <%= @todo.milestone.name %> for <%= @todo.milestone.project.name %>
+            <% end %>
+          </dd>
+        </div>
+      <% end %>
+
+      <div>
+        <dt class="font-medium text-slate-500">Status</dt>
+        <dd class="text-slate-900">
+          <% if @todo.completed? %>
+            <span class="text-green-700">Completed</span>
+          <% else %>
+            <span class="text-slate-700">Active</span>
+          <% end %>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="flex items-center gap-3 mt-6 pt-4 border-t border-slate-200">
+      <%= link_to "Edit", edit_todo_path(@todo),
+            class: "rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-blue-500" %>
+      <%= button_to "Delete", todo_path(@todo),
+            method: :delete,
+            data: { turbo_confirm: "Delete this todo?" },
+            class: "text-sm text-red-600 hover:text-red-800 transition" %>
+      <%= link_to "Back", todos_path,
+            class: "text-sm text-slate-500 hover:text-slate-700 transition ml-auto" %>
+    </div>
+  </section>
+</div>

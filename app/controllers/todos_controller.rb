@@ -1,10 +1,24 @@
 class TodosController < ApplicationController
-  before_action :set_todo, only: %i[destroy complete move]
+  before_action :set_todo, only: %i[show edit update destroy complete move]
 
   def index
     @todo = current_user.todos.build(priority_window: :today)  # Default to today
     @active_todos_grouped = current_user.todos.includes(milestone: :project).active.group_by(&:priority_window)
     @completed_todos = current_user.todos.includes(milestone: :project).completed
+  end
+
+  def show
+  end
+
+  def edit
+  end
+
+  def update
+    if @todo.update(todo_params)
+      redirect_to todo_path(@todo), notice: "Todo updated."
+    else
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   def create
@@ -192,7 +206,7 @@ class TodosController < ApplicationController
     end
 
     def todo_params
-      params.require(:todo).permit(:title, :priority_window)
+      params.require(:todo).permit(:title, :priority_window, :notes)
     end
 
     def completed_count_html
