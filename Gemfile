@@ -47,7 +47,7 @@ gem "ruby_llm"
 gem "mcp-rb", require: "mcp"
 
 # iCal (.ics) file parsing and generation for calendar events
-gem "icalendar", "~> 2.10"
+gem "icalendar", "~> 2.12"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

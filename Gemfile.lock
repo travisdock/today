@@ -138,7 +138,7 @@ GEM
       activesupport (>= 6.1)
     i18n (1.14.8)
       concurrent-ruby (~> 1.0)
-    icalendar (2.12.1)
+    icalendar (2.12.2)
       base64
       ice_cube (~> 0.16)
       logger
@@ -433,7 +433,7 @@ DEPENDENCIES
   bundler-audit
   capybara
   debug
-  icalendar (~> 2.10)
+  icalendar (~> 2.12)
   image_processing (~> 1.2)
   importmap-rails
   jbuilder
