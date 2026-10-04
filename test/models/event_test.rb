@@ -298,4 +298,26 @@ class EventTest < ActiveSupport::TestCase
 
     assert_equal 1, dates.count
   end
+
+  # Multi-day helpers
+
+  test "day_count and multi_day? for multi-day event" do
+    event = events(:multi_day_event)
+
+    assert_equal 3, event.day_count
+    assert event.multi_day?
+  end
+
+  test "multi_day? is false for single-day event" do
+    assert_not events(:all_day_event).multi_day?
+    assert_not events(:personal_event).multi_day?
+  end
+
+  test "day_number returns position within span" do
+    event = events(:multi_day_event)
+    start_date = event.display_starts_at.to_date
+
+    assert_equal 1, event.day_number(start_date)
+    assert_equal 3, event.day_number(start_date + 2.days)
+  end
 end
