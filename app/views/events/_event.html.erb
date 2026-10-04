@@ -1,18 +1,37 @@
+<% day_number = event.multi_day? ? event.day_number(date) : nil %>
+<% continuation = day_number.present? && day_number > 1 %>
 <%= link_to event_path(event),
-      class: "block rounded-xl px-4 py-3 hover:bg-slate-50 transition #{event.reminder? ? 'text-slate-500 italic' : ''}" do %>
+      class: "block rounded-xl px-4 py-3 hover:bg-white/70 transition #{event.reminder? ? 'text-slate-500 italic' : ''}" do %>
   <div class="flex items-center gap-4">
-    <span class="text-sm font-medium <%= event.reminder? ? 'text-slate-400' : 'text-slate-600' %> w-20">
-      <% if event.all_day? %>
+    <span class="flex-1 <%= event.reminder? || continuation ? 'text-slate-500' : 'text-slate-900' %>">
+      <% if continuation %>
+        <%= event.title %> <span class="text-slate-400">continues</span>
+        <% if day_number == event.day_count && !event.all_day? %>
+          <span class="text-xs text-slate-400">· until <%= event.display_ends_at.strftime("%l:%M %p").strip %></span>
+        <% end %>
+      <% else %>
+        <%= event.title %>
+        <% if day_number %>
+          <% end_date = event.display_ends_at.to_date %>
+          <span class="ml-1 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 whitespace-nowrap">
+            <%= event.day_count %> days
+            <% unless event.all_day? %>· from <%= event.display_starts_at.strftime("%l:%M %p").strip %><% end %>
+            · thru <%= event.day_count > 7 ? end_date.strftime("%b %-d") : end_date.strftime("%a") %>
+          </span>
+        <% end %>
+      <% end %>
+    </span>
+    <% if event.project.present? %>
+      <span class="text-xs text-slate-400"><%= event.project.name %></span>
+    <% end %>
+    <span class="text-sm font-medium whitespace-nowrap text-right <%= event.reminder? || continuation ? 'text-slate-400' : 'text-slate-600' %> w-20">
+      <% if day_number %>
+        Day <%= day_number %>/<%= event.day_count %>
+      <% elsif event.all_day? %>
         All day
       <% else %>
         <%= event.display_starts_at.strftime("%l:%M %p").strip %>
       <% end %>
     </span>
-    <span class="flex-1 <%= event.reminder? ? 'text-slate-500' : 'text-slate-900' %>">
-      <%= event.title %>
-    </span>
-    <% if event.project.present? %>
-      <span class="text-xs text-slate-400"><%= event.project.name %></span>
-    <% end %>
   </div>
 <% end %>

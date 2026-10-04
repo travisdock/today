@@ -1,7 +1,7 @@
 <% if date_groups.empty? %>
   <p class="text-center text-slate-500 py-8">No events scheduled.</p>
 <% else %>
-  <div class="space-y-6">
+  <div>
     <% date_groups.sort.each do |date, events| %>
       <%= render "date_group", date: date, events: events %>
     <% end %>

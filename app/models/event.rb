@@ -50,6 +50,19 @@ class Event < ApplicationRecord
     (start_date..end_date).to_a
   end
 
+  def day_count
+    (display_ends_at.to_date - display_starts_at.to_date).to_i + 1
+  end
+
+  def multi_day?
+    day_count > 1
+  end
+
+  # 1-based position of the given date within the event's span
+  def day_number(date)
+    (date - display_starts_at.to_date).to_i + 1
+  end
+
   private
 
   def generate_uid

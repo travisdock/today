@@ -2,8 +2,9 @@ class EventsController < ApplicationController
   before_action :set_event, only: %i[show edit update destroy export]
 
   def index
-    @events = load_events
-    @date_groups = group_events_by_date(@events)
+    @date_range = index_date_range
+    @events = current_user.events.for_date_range(@date_range.first, @date_range.last).includes(:project)
+    @date_groups = group_events_by_date(@events, @date_range)
   end
 
   def show
@@ -94,7 +95,7 @@ class EventsController < ApplicationController
     end_date = start_date + 30.days
 
     @events = current_user.events.for_date_range(start_date, end_date).includes(:project)
-    @date_groups = group_events_by_date(@events)
+    @date_groups = group_events_by_date(@events, start_date..end_date)
     @next_start_date = end_date + 1.day
 
     respond_to do |format|
@@ -127,23 +128,24 @@ class EventsController < ApplicationController
     }
   end
 
-  def load_events
-    events = if params[:month].present?
+  def index_date_range
+    if params[:month].present?
       year, month = params[:month].split("-").map(&:to_i)
-      current_user.events.for_month(year, month)
+      start_of_month = Date.new(year, month, 1)
+      start_of_month..start_of_month.end_of_month
     else
-      end_date = Date.current + 30.days
-      current_user.events.for_date_range(Date.current, end_date)
+      Date.current..(Date.current + 30.days)
     end
-    events.includes(:project)
   end
 
-  def group_events_by_date(events)
-    groups = Hash.new { |h, k| h[k] = [] }
+  # Every date in the range gets a group (possibly empty) so the list shows
+  # each day. Multi-day events are clipped to the range.
+  def group_events_by_date(events, date_range)
+    groups = date_range.index_with { [] }
 
     events.each do |event|
       event.spanned_dates.each do |date|
-        groups[date] << event
+        groups[date] << event if groups.key?(date)
       end
     end
 

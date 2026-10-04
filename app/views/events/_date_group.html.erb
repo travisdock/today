@@ -1,10 +1,17 @@
-<div class="border-t border-slate-200 pt-4 first:border-0 first:pt-0">
-  <h2 class="text-sm font-semibold text-slate-600 mb-3">
-    <%= date.strftime("%B %d") %> - <%= date.strftime("%A") %>
-  </h2>
-  <div class="space-y-2">
-    <% events.sort_by { |e| e.all_day? ? Time.at(0) : e.starts_at }.each do |event| %>
-      <%= render "event", event: event %>
-    <% end %>
-  </div>
+<%# Stripe by date parity (not nth-child) so stripes stay consistent when load_more appends days %>
+<div class="rounded-lg px-2 py-3 <%= date.jd.even? ? 'bg-slate-300/60' : '' %>">
+  <% if events.empty? %>
+    <h2 class="px-4 text-sm font-medium text-slate-500">
+      <%= date.strftime("%B %d") %> - <%= date.strftime("%A") %>
+    </h2>
+  <% else %>
+    <h2 class="px-4 text-sm font-semibold text-slate-600 mb-2">
+      <%= date.strftime("%B %d") %> - <%= date.strftime("%A") %>
+    </h2>
+    <div class="space-y-1">
+      <% events.sort_by { |e| e.all_day? || e.day_number(date) > 1 ? Time.at(0) : e.starts_at }.each do |event| %>
+        <%= render "event", event: event, date: date %>
+      <% end %>
+    </div>
+  <% end %>
 </div>
