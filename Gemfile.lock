@@ -129,11 +129,10 @@ GEM
       activesupport (>= 6.1)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
-    icalendar (2.12.5)
+    icalendar (2.13.0)
       base64
       ice_cube (~> 0.16)
       logger
-      ostruct
     ice_cube (0.17.0)
     image_processing (2.2.0)
     importmap-rails (2.2.3)
@@ -195,7 +194,6 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.4-x86_64-linux-musl)
       racc (~> 1.4)
-    ostruct (0.6.3)
     parallel (2.3.0)
     parser (3.3.12.0)
       ast (~> 2.4.1)
